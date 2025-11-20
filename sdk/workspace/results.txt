@@ -1,0 +1,2 @@
+Gate Location: Angle = 0, Distance = 0
+Target Location: Angle = 0, Distance = 0
