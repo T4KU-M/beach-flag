@@ -36,6 +36,7 @@
 #include <stdlib.h>
 
 // ビーチフラッグ用
+#include "detectTime.h"
 #include <iostream>
 #include <fstream>
 
@@ -151,6 +152,14 @@ void scenarioTask(intptr_t unused)
 	gGreenMaxV = 0;
 	gGreenMinV = 0;	
 
+	// ターゲット設定用変数
+	int MaxH = 0;
+	int MinH = 0;
+	int MaxS = 0;
+	int MinS = 0;
+	int MaxV = 0;
+	int MinV = 0;
+
 	// 入力パラメータ格納用の構造体を初期化
 	import_params importParams = {-1, -1, -1, -1, -1};
 
@@ -171,6 +180,45 @@ void scenarioTask(intptr_t unused)
 		// param_beach-flag.txt よりパラメータ値を取得
 		getParamsFromFile(importParams);
 
+		// 目的地の色を設定
+		switch(importParams.targetColor)
+		{
+			// RED
+			case 0:
+				MaxH = gRedMaxH;
+				MinH = gRedMinH;
+				MaxS = gRedMaxS;
+				MinS = gRedMinS;
+				MaxV = gRedMaxV;
+				MinV = gRedMinV;
+			break;
+
+			// GREEN
+			case 1:
+				MaxH = gGreenMaxH;
+				MinH = gGreenMinH;
+				MaxS = gGreenMaxS;
+				MinS = gGreenMinS;
+				MaxV = gGreenMaxV;
+				MinV = gGreenMinV;
+			break;
+
+			// BLUE
+			case 2:
+				MaxH = gBlueMaxH;
+				MinH = gBlueMinH;
+				MaxS = gBlueMaxS;
+				MinS = gBlueMinS;
+				MaxV = gBlueMaxV;
+				MinV = gBlueMinV;
+			break;
+
+			default:
+			break;
+		}
+
+		DetectHsv detectColor = new DetectHsv(MinH, MaxH, MinS, MaxS, MinV, MaxV);
+
 		// シナリオを作成する
 		Scenario *pScenario = new Scenario();
 		createScenario(*pScenario, importParams);
@@ -187,12 +235,20 @@ void scenarioTask(intptr_t unused)
 				break;
 			}
 
+			// 目的のカラーゾーンに到着しているかチェック
+			if(detectColor.detect())
+			{
+				printf("BF: arrived!\n");
+				break;
+			}
+
 			// スタートからゴールまでのシナリオを実行する
 			complete = pScenario->excute();
 			slp_tsk();
 		} while (!complete);
 
 		delete pScenario;
+		delete detectColor;
 
 		pup_motor_set_power(gRobot.leftMotor(), 0);
 		pup_motor_set_power(gRobot.rightMotor(), 0);
@@ -223,7 +279,7 @@ static void createScenario(Scenario &scenario, import_params &importParams)
 	int deviceForAdjust 		= importParams.deviceForAdjust;				// フィードバック走行にカメラを使うか、ジャイロを使うか(0:カメラ/1:ジャイロ)
 	int speed	 				= importParams.speed;						// 走行スピード(1~100)
 	int intervalForGettingFile 	= importParams.intervalForGettingFile;		// 何秒に一度ジャイロorカメラからファイルを取得するか(1~10[s])
-	int amountOfAdjust 			= importParams.amountOfAdjust; 				// フィードバック制御時の制御量(1~10)
+	double amountOfAdjust 		= importParams.amountOfAdjust / 5; 			// フィードバック制御時の制御量(1~10) 0.2 <= kp <= 2.0 の間くらいで動かすとする
 
 	// PID の初期値（デフォルト値）20250904////////////////////////////////////////////////////////////////////////////////////
 	double kp_test = KP1;
@@ -252,30 +308,35 @@ static void createScenario(Scenario &scenario, import_params &importParams)
 	///////////////////////ここが本番のシナリオの中身////////////////////////////////////////////////////////
 
 	/* 動作：ぴぽっど 終了：角度 */
-	scenario.append({new DetectAngle(178),
+	scenario.append({new DetectAngle(180),
 					 new Pipod(Left)});
-	/* 動作：ファイル読み込み 終了：時間*/
-	scenario.append({new DetectCount(),
-					 new Readfile()});
-	/* 動作：ピポッド 終了：角度 */
-	scenario.append({new DetectAngleforpic(target = Marker),
-					 new Pipodforpic(target = Marker)});				 
-	/* 動作：直進 終了：距離*/
-	scenario.append({new DetectDistance(threTravelDistance = 2000),
-					 new Turn(fixedTurningAmount = 0, speedMin = 100, speedMax = 100)});
 
-	/* 動作：ファイル読み込み 終了：時間*/
-	scenario.append({new DetectCount(),
-					 new Readfile()});
-	/* 動作：直進 終了：距離*/
-	scenario.append({new DetectDistance(threTravelDistance = 2100),
-					 new Turn(fixedTurningAmount = 0, speedMin = 100, speedMax = 100)});
-	/* 動作：ピポッド 終了：角度 */
-	scenario.append({new DetectAngleforpic(target = Marker),
-					 new Pipodforpic(target = Marker)});
+	for(int i=0; i<10; i++)
+	{
+		/* 動作：直進 終了：指定時間走行*/
+		scenario.append({new DetectTime(intervalForGettingFile),
+					 new Turn(fixedTurningAmount = 0, speedMin = speed, speedMax = speed, kp = amountOfAdjust)});
+
+		/* 動作：カメラ or ジャイロから情報取得 終了：?? */
+		// TODO: カメラの利用方法確認
+		
+	}			 
+	
 	//停止
 	scenario.append({new DetectStart(),
 					 new Stay()});
+
+
+	// /* 動作：ファイル読み込み 終了：時間*/
+	// scenario.append({new DetectCount(),
+	// 				 new Readfile()});
+	// /* 動作：直進 終了：距離*/
+	// scenario.append({new DetectDistance(threTravelDistance = 2100),
+	// 				 new Turn(fixedTurningAmount = 0, speedMin = 100, speedMax = 100)});
+	// /* 動作：ピポッド 終了：角度 */
+	// scenario.append({new DetectAngleforpic(target = Marker),
+	// 				 new Pipodforpic(target = Marker)});
+	
 	
 	// scenario.append({new DetectCount(100),
 	// 				 new Stay()});	
