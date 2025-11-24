@@ -39,7 +39,17 @@
 #include <iostream>
 #include <fstream>
 
-static void createScenario(Scenario &scenario, import_params &importParams)
+// createScenario()に渡すパラメータ群を保持する構造体
+struct import_params
+{
+	int targetColor;				// 何色のゴールを目指すか(0:R/1:G/2:B)
+	int deviceForAdjust;			// フィードバック走行にカメラを使うか、ジャイロを使うか(0:カメラ/1:ジャイロ)
+	int speed;						// 走行スピード(1~100)
+	int intervalForGettingFile;		// 何秒に一度ジャイロorカメラからファイルを取得するか(1~10[s])
+	int amountOfAdjust;				// フィードバック制御時の制御量(1~10)
+};
+
+static void createScenario(Scenario &scenario, import_params &importParams);
 // static void createScenario(Scenario &scenario)
 // static void createScenario_slalom(Scenario &scenario);
 // static void createScenario_garage(Scenario &scenario);
@@ -50,17 +60,7 @@ static void loadPidParams(double &kp, double &ki, double &kd, int num );
 static void waitForForceSensor();
 static bool isForceSensorPressed(DetectStart &detectForceSensor);
 static void getParamsFromFile(import_params &importParams);
-static std::string importFilePath = "¥¥home¥¥AC130¥¥RasPike-ART¥¥sdk¥¥workspace¥¥param_beach-flag¥¥param_beach-flag.txt";
-
-// createScenario()に渡すパラメータ群を保持する構造体
-struct import_params
-{
-	int targetColor;				// 何色のゴールを目指すか(0:R/1:G/2:B)
-	int deviceForAdjust;			// フィードバック走行にカメラを使うか、ジャイロを使うか(0:カメラ/1:ジャイロ)
-	int speed;						// 走行スピード(1~100)
-	int intervalForGettingFile;		// 何秒に一度ジャイロorカメラからファイルを取得するか(1~10[s])
-	int amountOfAdjust;				// フィードバック制御時の制御量(1~10)
-};
+static std::string importFilePath = "/home/AC130/RasPike-ART/sdk/workspace/param_beach-flag/param_beach-flag.txt";
 
 /////////キャリブレーションで書き換え///////////////////////////////////////////////////////////////////////
 //#define CARIBRATION // コメント外すと実行
@@ -166,7 +166,7 @@ void scenarioTask(intptr_t unused)
 	while(true){
 		// 新規関数 フォースセンサが押下されるまで待機
 		waitForForceSensor();
-		printf("BF: start!¥n");
+		printf("BF: start!\n");
 		
 		// param_beach-flag.txt よりパラメータ値を取得
 		getParamsFromFile(importParams);
@@ -183,9 +183,10 @@ void scenarioTask(intptr_t unused)
 			// 新規関数 フォースセンサが押されていないかチェック
 			if(isForceSensorPressed(detectForceSensor))
 			{
-				printf("BF: stop!¥n");
+				printf("BF: stop!\n");
 				break;
 			}
+
 			// スタートからゴールまでのシナリオを実行する
 			complete = pScenario->excute();
 			slp_tsk();
@@ -263,18 +264,18 @@ static void createScenario(Scenario &scenario, import_params &importParams)
 	scenario.append({new DetectDistance(threTravelDistance = 2000),
 					 new Turn(fixedTurningAmount = 0, speedMin = 100, speedMax = 100)});
 
-	// /* 動作：ファイル読み込み 終了：時間*/
-	// scenario.append({new DetectCount(),
-	// 				 new Readfile()});
-	// /* 動作：直進 終了：距離*/
-	// scenario.append({new DetectDistance(threTravelDistance = 2100),
-	// 				 new Turn(fixedTurningAmount = 0, speedMin = 100, speedMax = 100)});
-	// /* 動作：ピポッド 終了：角度 */
-	// scenario.append({new DetectAngleforpic(target = Marker),
-	// 				 new Pipodforpic(target = Marker)});
-	// //停止
-	// scenario.append({new DetectStart(),
-	// 				 new Stay()});
+	/* 動作：ファイル読み込み 終了：時間*/
+	scenario.append({new DetectCount(),
+					 new Readfile()});
+	/* 動作：直進 終了：距離*/
+	scenario.append({new DetectDistance(threTravelDistance = 2100),
+					 new Turn(fixedTurningAmount = 0, speedMin = 100, speedMax = 100)});
+	/* 動作：ピポッド 終了：角度 */
+	scenario.append({new DetectAngleforpic(target = Marker),
+					 new Pipodforpic(target = Marker)});
+	//停止
+	scenario.append({new DetectStart(),
+					 new Stay()});
 	
 	// scenario.append({new DetectCount(100),
 	// 				 new Stay()});	
@@ -543,7 +544,7 @@ void waitForForceSensor()
 
 // ビーチフラッグ用 新規定義
 bool isForceSensorPressed(DetectStart &detectForceSensor)
-[
+{
 	if(detectForceSensor.detect())
 	{
 		return true;
@@ -552,7 +553,7 @@ bool isForceSensorPressed(DetectStart &detectForceSensor)
 	{
 		return false;
 	}
-]
+}
 
 // ビーチフラッグ用 新規定義
 void getParamsFromFile(import_params &importParams)
@@ -593,12 +594,12 @@ void getParamsFromFile(import_params &importParams)
 			{
 				int param = std::stoi(line);
 				inputs.push_back(param);
-				printf("BF: " + param + "¥n");
+				printf("BF: param = %d\n", param);
 			}
 			catch(const std::exception& e)
 			{
 				// 整数型に変換できなかった場合-1を入れておく
-				printf("BF: " + e.what() + ":" + line + '\n');
+				printf(e.what());
 				inputs.push_back(-1);
 			}
 		}

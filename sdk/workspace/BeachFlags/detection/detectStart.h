@@ -8,6 +8,7 @@ class DetectStart : public Detect
 {
 public:
 	DetectStart();
+	bool detectForBeachFlags();
 	bool detect() override;
 
 private:

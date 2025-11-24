@@ -40,4 +40,12 @@ extern double targetangle;
 extern double targetdistance;
 extern double angleSum;
 
+// ビーチフラッグ用に追加
+extern int gRedMinH, gRedMaxH;
+extern int gRedMinS, gRedMaxS;
+extern int gRedMinV, gRedMaxV;
+extern int gGreenMinH, gGreenMaxH;
+extern int gGreenMinS, gGreenMaxS;
+extern int gGreenMinV, gGreenMaxV;
+
 #endif
