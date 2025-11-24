@@ -22,7 +22,7 @@ void Pipodforpic::determineSpeedAndSteering()
 		int u = 80;
 		int s = 1;
 		s = (angle >= 0)? 1 : -1; 
-		setSpeed(u);		// 速度をゼロにする
-		setSteering((u + 10)*s);		// 旋回量をゼロにする
+		setSpeed(u);		// 速度を設定
+		setSteering((u + 10)*s);		// 旋回量を設定
 
 }

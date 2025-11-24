@@ -35,12 +35,32 @@
 #include <string.h>
 #include <stdlib.h>
 
-static void createScenario(Scenario &scenario);
+// ビーチフラッグ用
+#include <iostream>
+#include <fstream>
+
+static void createScenario(Scenario &scenario, import_params &importParams)
+// static void createScenario(Scenario &scenario)
 // static void createScenario_slalom(Scenario &scenario);
 // static void createScenario_garage(Scenario &scenario);
 static void calibration(int &black, int &white);
 static void loadPidParams(double &kp, double &ki, double &kd, int num );
 
+// ビーチフラッグ用に新規定義
+static void waitForForceSensor();
+static bool isForceSensorPressed(DetectStart &detectForceSensor);
+static void getParamsFromFile(import_params &importParams);
+static std::string importFilePath = "¥¥home¥¥AC130¥¥RasPike-ART¥¥sdk¥¥workspace¥¥param_beach-flag¥¥param_beach-flag.txt";
+
+// createScenario()に渡すパラメータ群を保持する構造体
+struct import_params
+{
+	int targetColor;				// 何色のゴールを目指すか(0:R/1:G/2:B)
+	int deviceForAdjust;			// フィードバック走行にカメラを使うか、ジャイロを使うか(0:カメラ/1:ジャイロ)
+	int speed;						// 走行スピード(1~100)
+	int intervalForGettingFile;		// 何秒に一度ジャイロorカメラからファイルを取得するか(1~10[s])
+	int amountOfAdjust;				// フィードバック制御時の制御量(1~10)
+};
 
 /////////キャリブレーションで書き換え///////////////////////////////////////////////////////////////////////
 //#define CARIBRATION // コメント外すと実行
@@ -54,6 +74,16 @@ static void loadPidParams(double &kp, double &ki, double &kd, int num );
 #define BLUE_H 200
 #define BLUE_S 200
 #define BLUE_V 403
+
+// 赤色カラー検知 ビーチフラッグ用
+#define RED_H 0
+#define RED_S 0
+#define RED_V 0
+
+// 緑色カラー検知 ビーチフラッグ用
+#define GREEN_H 0
+#define GREEN_S 0
+#define GREEN_V 0
 
 // PIDの初期値ファイルで書き換えできる(pid数字.txt)
 //1:直線 2:カーブ 3:でかい丸 4:小さい丸
@@ -104,31 +134,76 @@ void scenarioTask(intptr_t unused)
 	gBlueMinS = BLACK_R + 30;
 	gBlueMaxV = 1023;
 	gBlueMinV = 400;
+
+	// ビーチフラッグ用に追加
+	// TODO : HSV値の決め方
+	gRedMaxH = 0;
+	gRedMinH = 0;
+	gRedMaxS = 0;
+	gRedMinS = 0;
+	gRedMaxV = 0;
+	gRedMinV = 0;
+
+	gGreenMaxH = 0;
+	gGreenMinH = 0;
+	gGreenMaxS = 0;
+	gGreenMinS = 0;
+	gGreenMaxV = 0;
+	gGreenMinV = 0;	
+
+	// 入力パラメータ格納用の構造体を初期化
+	import_params importParams = {-1, -1, -1, -1, -1};
+
+	// フォースセンサ検知→中断用
+	// ここでインスタンス化しとかないとisForceSensorPressedが呼び出されるたびに状態がリセットされてしまう
+	DetectStart detectForceSensor;
+
 #ifdef CARIBRATION
 	calibration(gBlack, gWhite);
 #endif /*CARIBRATION*/
 
-	// シナリオを作成する
-	bool complete = false;
-	Scenario *pScenario = new Scenario();
-	createScenario(*pScenario);
-	do
-	{
-		// スタートからゴールまでのシナリオを実行する
-		complete = pScenario->excute();
-		slp_tsk();
-	} while (!complete);
-	delete pScenario;
+	// 以下、ビーチフラッグ用に無限ループに変更
+	while(true){
+		// 新規関数 フォースセンサが押下されるまで待機
+		waitForForceSensor();
+		printf("BF: start!¥n");
+		
+		// param_beach-flag.txt よりパラメータ値を取得
+		getParamsFromFile(importParams);
 
-	pup_motor_set_power(gRobot.leftMotor(), 0);
-	pup_motor_set_power(gRobot.rightMotor(), 0);
+		// シナリオを作成する
+		Scenario *pScenario = new Scenario();
+		createScenario(*pScenario, importParams);
 
+		// 終了フラグ
+		bool complete = false;
+
+		do
+		{
+			// 新規関数 フォースセンサが押されていないかチェック
+			if(isForceSensorPressed(detectForceSensor))
+			{
+				printf("BF: stop!¥n");
+				break;
+			}
+			// スタートからゴールまでのシナリオを実行する
+			complete = pScenario->excute();
+			slp_tsk();
+		} while (!complete);
+
+		delete pScenario;
+
+		pup_motor_set_power(gRobot.leftMotor(), 0);
+		pup_motor_set_power(gRobot.rightMotor(), 0);
+	}
+
+	// Mainタスク終了
 	wup_tsk(MAIN_TASK);
 	ext_tsk();
 }
 
 // シナリオを作成する.
-static void createScenario(Scenario &scenario)
+static void createScenario(Scenario &scenario, import_params &importParams)
 {
 	// const int darkThreshold = gBlack + 20;
 	// const int grayThreshold = (gWhite + gBlack) / 2 - 10;
@@ -141,6 +216,13 @@ static void createScenario(Scenario &scenario)
 	double threTravelDistance;
 	LeftOrRight lineEdge, direction;
 	Target target;
+
+	// ビーチフラッグ用に変数追加
+	int targetColor  			= importParams.targetColor;					// 何色のゴールを目指すか(0:R/1:G/2:B)
+	int deviceForAdjust 		= importParams.deviceForAdjust;				// フィードバック走行にカメラを使うか、ジャイロを使うか(0:カメラ/1:ジャイロ)
+	int speed	 				= importParams.speed;						// 走行スピード(1~100)
+	int intervalForGettingFile 	= importParams.intervalForGettingFile;		// 何秒に一度ジャイロorカメラからファイルを取得するか(1~10[s])
+	int amountOfAdjust 			= importParams.amountOfAdjust; 				// フィードバック制御時の制御量(1~10)
 
 	// PID の初期値（デフォルト値）20250904////////////////////////////////////////////////////////////////////////////////////
 	double kp_test = KP1;
@@ -167,12 +249,7 @@ static void createScenario(Scenario &scenario)
 	loadPidParams(kp4_test, ki4_test, kd4_test, 4);
 #endif /*SETPIDFROMFILE*/
 	///////////////////////ここが本番のシナリオの中身////////////////////////////////////////////////////////
-	/*
-	動作：待機
-	終了：ボタン押される
-	*/
-	scenario.append({new DetectStart(),
-					 new Stay()});
+
 	/* 動作：ぴぽっど 終了：角度 */
 	scenario.append({new DetectAngle(178),
 					 new Pipod(Left)});
@@ -186,18 +263,27 @@ static void createScenario(Scenario &scenario)
 	scenario.append({new DetectDistance(threTravelDistance = 2000),
 					 new Turn(fixedTurningAmount = 0, speedMin = 100, speedMax = 100)});
 
-	/* 動作：ファイル読み込み 終了：時間*/
-	scenario.append({new DetectCount(),
-					 new Readfile()});
-	/* 動作：直進 終了：距離*/
-	scenario.append({new DetectDistance(threTravelDistance = 2100),
-					 new Turn(fixedTurningAmount = 0, speedMin = 100, speedMax = 100)});
-	/* 動作：ピポッド 終了：角度 */
-	scenario.append({new DetectAngleforpic(target = Marker),
-					 new Pipodforpic(target = Marker)});
-	//停止
-	scenario.append({new DetectStart(),
-					 new Stay()});
+	// /* 動作：ファイル読み込み 終了：時間*/
+	// scenario.append({new DetectCount(),
+	// 				 new Readfile()});
+	// /* 動作：直進 終了：距離*/
+	// scenario.append({new DetectDistance(threTravelDistance = 2100),
+	// 				 new Turn(fixedTurningAmount = 0, speedMin = 100, speedMax = 100)});
+	// /* 動作：ピポッド 終了：角度 */
+	// scenario.append({new DetectAngleforpic(target = Marker),
+	// 				 new Pipodforpic(target = Marker)});
+	// //停止
+	// scenario.append({new DetectStart(),
+	// 				 new Stay()});
+	
+	// scenario.append({new DetectCount(100),
+	// 				 new Stay()});	
+	// scenario.append({new DetectRead(),
+	// 				 new Readfile()});
+	// scenario.append({new DetectAngleforpic(target = Marker),
+	// 				 new Pipodforpic(target = Marker)});
+	// scenario.append({new DetectDistance(threTravelDistance = 1000),
+	// 				 new Turn(fixedTurningAmount = 0, speedMin = 500, speedMax = 500)});
 }
 
 ///////////////////////キャリブレーション↓↓//////////////////////////////////////////////////////////////
@@ -439,4 +525,92 @@ static void loadPidParams(double &kp, double &ki, double &kd, int num )
 		printf("PID file not found or invalid. Using defaults: Kp=%.6f Ki=%.6f Kd=%.6f\n", kp, ki, kd);
 	}
 }
+
+
+// ビーチフラッグ用 新規定義
+void waitForForceSensor()
+{
+	DetectStart detectStart;
+	while(true)
+	{
+		if(detectStart.detect())
+		{
+			break;
+		}
+		slp_tsk();
+	}
+}
+
+// ビーチフラッグ用 新規定義
+bool isForceSensorPressed(DetectStart &detectForceSensor)
+[
+	if(detectForceSensor.detect())
+	{
+		return true;
+	}
+	else
+	{
+		return false;
+	}
+]
+
+// ビーチフラッグ用 新規定義
+void getParamsFromFile(import_params &importParams)
+{
+	/*
+	int targetColor;				// 何色のゴールを目指すか(0:R/1:G/2:B)
+	int deviceForAdjust;			// フィードバック走行にカメラを使うか、ジャイロを使うか(0:カメラ/1:ジャイロ)
+	int speed;						// 走行スピード(1~100)
+	int intervalForGettingFile;		// 何秒に一度ジャイロorカメラからファイルを取得するか(1~10[s])
+	int amountOfAdjust;				// フィードバック制御時の制御量(1~10)
+	*/
+	
+	// デフォルト値
+	// TODO: デフォルト値決定
+	import_params defaultValues = {1, 0, 0, 1, 1};
+
+	std::ifstream paramFile(importFilePath);
+	std::vector<int> inputs;
+	if(!paramFile.is_open())
+	{
+		printf("BF: failed to get parameters from file.\n");
+
+		// ファイルが無ければデフォルト値を設定
+		importParams.targetColor 			= defaultValues.targetColor;
+		importParams.deviceForAdjust 		= defaultValues.deviceForAdjust;
+		importParams.speed 					= defaultValues.speed;
+		importParams.intervalForGettingFile = defaultValues.intervalForGettingFile;
+		importParams.amountOfAdjust 		= defaultValues.amountOfAdjust;
+	}
+	else
+	{
+		printf("BF: succeed to get parameters from file.\n");
+
+		std::string line;
+		while(std::getline(paramFile, line))
+		{
+			try
+			{
+				int param = std::stoi(line);
+				inputs.push_back(param);
+				printf("BF: " + param + "¥n");
+			}
+			catch(const std::exception& e)
+			{
+				// 整数型に変換できなかった場合-1を入れておく
+				printf("BF: " + e.what() + ":" + line + '\n');
+				inputs.push_back(-1);
+			}
+		}
+
+		// 最大値・最小値と比較し、仕様範囲外の場合デフォルト値を設定
+		importParams.targetColor 			= (0 <= inputs[0] && inputs[0] <= 2)? 	inputs[0] : defaultValues.targetColor;
+		importParams.deviceForAdjust 		= (0 <= inputs[1] && inputs[1] <= 1)? 	inputs[1] : defaultValues.deviceForAdjust;
+		importParams.speed 					= (1 <= inputs[2] && inputs[2] <= 100)? inputs[2] : defaultValues.speed;
+		importParams.intervalForGettingFile = (1 <= inputs[3] && inputs[3] <= 10)? 	inputs[3] : defaultValues.intervalForGettingFile;
+		importParams.amountOfAdjust 		= (1 <= inputs[4] && inputs[4] <= 10)? 	inputs[4] : defaultValues.amountOfAdjust;
+	}
+}
+
+
 //////////////////////////////txtからPIDを読み込む↑↑/////////////////////////////////////////////////////////////////////////////////////////////

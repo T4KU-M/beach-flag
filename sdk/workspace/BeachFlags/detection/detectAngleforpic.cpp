@@ -9,7 +9,7 @@ DetectAngleforpic::DetectAngleforpic(Target target)
 {
 }
 
-// 検知結果を確認するaaaa
+// 検知結果を確認する
 bool DetectAngleforpic::detect()
 {
 	double theta;

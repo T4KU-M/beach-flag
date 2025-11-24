@@ -53,3 +53,32 @@ return false;
 */
 #endif
 }
+
+// ビーチフラッグ用 すぐにボタン押下を検知できるようにカウント数を削減してみました
+// 状況に応じてこっちを使ってみる所存
+bool DetectStart::detectForBeachFlags()
+{
+#ifdef MAKE_SIM
+	// 検知条件：タッチセンサが押下される
+	return gRobot.touchSensor()->isPressed();
+#else
+	// 検知条件：フォースセンサーが押される
+	if (mCount >= 2 && (pup_force_sensor_pressed(gRobot.forceSensor(), 5)!=true))
+	{
+		printf("スタート検知\n"); // 手を離した瞬間スタート
+		return true;
+	} 
+	if (pup_force_sensor_pressed(gRobot.forceSensor(), 1))
+	{
+		// 押している間カウントアップ
+		mCount++;
+	} 
+	else
+	{
+		// 0.2秒以内に手を離したらリセット
+		mCount = 0;
+	} // 0.2秒以内に手を離したらリセット
+	return false;
+	// 手を離した瞬間スタート
+#endif
+}

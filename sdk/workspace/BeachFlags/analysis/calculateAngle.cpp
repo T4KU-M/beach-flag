@@ -9,7 +9,7 @@ CalculateAngle::CalculateAngle()
 {
 }
 
-// 自己位置を更新するaa
+// 自己位置を更新する
 void CalculateAngle::update()
 {
 	if (mReset)
