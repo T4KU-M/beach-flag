@@ -7,6 +7,7 @@
 Turn::Turn(int fixedTurningAmount, int speedMin, int speedMax, double kp)
 	: Run(speedMin, speedMax), mFixedTurningAmount(fixedTurningAmount), mSpeedMin(speedMin), kp(kp), mReset(true)
 {
+	printf("DetectTurn\n");
 }
 
 // 旋回量を決定する(override)

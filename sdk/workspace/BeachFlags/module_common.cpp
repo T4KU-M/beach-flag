@@ -14,10 +14,11 @@ Robot gRobot;
 int gRedMinH, gRedMaxH;
 int gRedMinS, gRedMaxS;
 int gRedMinV, gRedMaxV;
-
 int gGreenMinH, gGreenMaxH;
 int gGreenMinS, gGreenMaxS;
 int gGreenMinV, gGreenMaxV;
+double currentX, currentY, currentTheta;
+
 
 double gateangle ;
 double gatedistance;

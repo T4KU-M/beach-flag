@@ -34,9 +34,8 @@ bool DetectHsv::detect()
 		mCount = 0;
 	}
 	//printf("%d\n",mCount);
-	if(mCount==1){
-		printf("青検知\n");
+	if(mCount == 1){
+		printf("検知\n");
 	}
 	return (mCount >= 1);
-	
 }

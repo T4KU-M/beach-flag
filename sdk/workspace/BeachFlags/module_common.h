@@ -47,5 +47,6 @@ extern int gRedMinV, gRedMaxV;
 extern int gGreenMinH, gGreenMaxH;
 extern int gGreenMinS, gGreenMaxS;
 extern int gGreenMinV, gGreenMaxV;
+extern double currentX, currentY, currentTheta;
 
 #endif

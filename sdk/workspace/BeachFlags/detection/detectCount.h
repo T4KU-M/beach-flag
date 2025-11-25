@@ -11,7 +11,7 @@ public:
 		bool detect() override;
 
 private:
-    int mTemp;
+    double mTemp;
 	int mCount;
 
 };

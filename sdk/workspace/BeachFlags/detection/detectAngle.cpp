@@ -9,7 +9,7 @@ DetectAngle::DetectAngle(double minAngle)
 {
 }
 
-// 検知結果を確認するaaaa
+// 検知結果を確認する
 bool DetectAngle::detect()
 {
 	double theta;

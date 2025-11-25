@@ -5,17 +5,18 @@
 #include "detect.h"
 #include <kernel.h>
 
-class DetectTimeOrHSV : public Detect
+class DetectTime : public Detect
 {
 public:
-	DetectTimeOrHSV(int interval);
+	DetectTime(int interval);
 	bool detect() override;
 
 private:
 	int mInterval;
 	SYSTIM startTime;
 	SYSTIM now;
-	SYSTIM elapsed;
+	SYSTIM elapsedTime;
+	bool isStartTimeObtained;
 };
 
 #endif // DETECT_TIME_H_

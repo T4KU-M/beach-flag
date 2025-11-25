@@ -49,6 +49,9 @@ void Localizer::update()
 // 自己位置と進行方向を取得する
 void Localizer::coordinates(double &x, double &y, double &theta) const
 {
+	// 進行方向：x軸正方向
+	// 進行方向左：y軸正方向
+	// 半時計回り：¥thetaの正方向
 	x = mX; y = mY; theta = mTheta;
 }
 
