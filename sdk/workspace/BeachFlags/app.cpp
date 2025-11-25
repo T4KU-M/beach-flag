@@ -319,7 +319,7 @@ static void createScenario(Scenario &scenario, import_params &importParams)
 
 		/* 動作：カメラ or ジャイロから情報取得 終了：?? */
 		// TODO: カメラの利用方法確認
-		
+
 	}			 
 	
 	//停止
@@ -336,7 +336,6 @@ static void createScenario(Scenario &scenario, import_params &importParams)
 	// /* 動作：ピポッド 終了：角度 */
 	// scenario.append({new DetectAngleforpic(target = Marker),
 	// 				 new Pipodforpic(target = Marker)});
-	
 	
 	// scenario.append({new DetectCount(100),
 	// 				 new Stay()});	
