@@ -44,9 +44,7 @@ extern double angleSum;
 extern int gRedMinH, gRedMaxH;
 extern int gRedMinS, gRedMaxS;
 extern int gRedMinV, gRedMaxV;
-extern int gGreenMinH, gGreenMaxH;
-extern int gGreenMinS, gGreenMaxS;
-extern int gGreenMinV, gGreenMaxV;
 extern double currentX, currentY, currentTheta;
+extern double currentTargetTheta; // 可変量の旋回検知に対応するための変数
 
 #endif

@@ -14,10 +14,8 @@ Robot gRobot;
 int gRedMinH, gRedMaxH;
 int gRedMinS, gRedMaxS;
 int gRedMinV, gRedMaxV;
-int gGreenMinH, gGreenMaxH;
-int gGreenMinS, gGreenMaxS;
-int gGreenMinV, gGreenMaxV;
 double currentX, currentY, currentTheta;
+double currentTargetTheta; // 可変量の旋回検知に対応するための変数
 
 
 double gateangle ;

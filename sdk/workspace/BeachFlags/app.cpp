@@ -38,13 +38,15 @@
 // ビーチフラッグ用
 #include "detectTime.h"
 #include "localizer.h"
+#include "turnByLocalizer.h"
+#include "detectAngleForCurrentTargetValue.h"
 #include <iostream>
 #include <fstream>
 
 // createScenario()に渡すパラメータ群を保持する構造体
 struct import_params
 {
-	int targetColor;				// 何色のゴールを目指すか(0:R/1:G/2:B)
+	int targetColor;				// 何色のゴールを目指すか(0:R/1:B)
 	int deviceForAdjust;			// フィードバック走行にカメラを使うか、ジャイロを使うか(0:カメラ/1:ジャイロ)
 	int speed;						// 走行スピード(1~100)
 	int intervalForGettingFile;		// 何秒に一度ジャイロorカメラからファイルを取得するか(1~10[s])
@@ -146,13 +148,6 @@ void scenarioTask(intptr_t unused)
 	gRedMaxV = 0;
 	gRedMinV = 0;
 
-	gGreenMaxH = 0;
-	gGreenMinH = 0;
-	gGreenMaxS = 0;
-	gGreenMinS = 0;
-	gGreenMaxV = 0;
-	gGreenMinV = 0;	
-
 	// ターゲット設定用変数
 	int MaxH = 0;
 	int MinH = 0;
@@ -194,18 +189,8 @@ void scenarioTask(intptr_t unused)
 				MinV = gRedMinV;
 			break;
 
-			// GREEN
-			case 1:
-				MaxH = gGreenMaxH;
-				MinH = gGreenMinH;
-				MaxS = gGreenMaxS;
-				MinS = gGreenMinS;
-				MaxV = gGreenMaxV;
-				MinV = gGreenMinV;
-			break;
-
 			// BLUE
-			case 2:
+			case 1:
 				MaxH = gBlueMaxH;
 				MinH = gBlueMinH;
 				MaxS = gBlueMaxS;
@@ -229,7 +214,7 @@ void scenarioTask(intptr_t unused)
 		currentTheta = -1;
 
 		// シナリオを作成する
-		createScenario(*pScenario, importParams, *pLocalizer);
+		createScenario(*pScenario, importParams, pLocalizer);
 
 		// 終了フラグ
 		bool complete = false;
@@ -277,7 +262,7 @@ static void createScenario(Scenario &scenario, import_params &importParams, Loca
 	int speedMin, speedMax;
 	int steeringMin, steeringMax;
 	// int brihgtnessMin, brightnessMax;
-	int fixedTurningAmount;
+	int fixedTurningAmount = 50; // ビーチフラッグ用に定数を設定 半時計回りが旋回量正
 	int minH, maxH, minS, maxS, minV, maxV;
 	double threTravelDistance;
 	LeftOrRight lineEdge, direction;
@@ -290,6 +275,9 @@ static void createScenario(Scenario &scenario, import_params &importParams, Loca
 	int intervalForGettingFile 	= importParams.intervalForGettingFile;		// 何秒に一度ジャイロorカメラからファイルを取得するか(1~10[s])
 	double amountOfAdjust 		= importParams.amountOfAdjust / 5; 			// フィードバック制御時の制御量(1~10) 0.2 <= kp <= 2.0 の間くらいで動かすとする
 
+	// ビーチフラッグ 目標地点の座標
+	double goalX = -400.0; // スタート時、背を向けているところが基準になるので進行方向はマイナスの値
+	double goalY = 0.0; 
 
 	// PID の初期値（デフォルト値）20250904////////////////////////////////////////////////////////////////////////////////////
 	double kp_test = KP1;
@@ -317,11 +305,11 @@ static void createScenario(Scenario &scenario, import_params &importParams, Loca
 #endif /*SETPIDFROMFILE*/
 	///////////////////////ここが本番のシナリオの中身////////////////////////////////////////////////////////
 
-	if(deviceForAdjust == 1)
+	if(deviceForAdjust == 1) // ジャイロ使用の場合
 	{
 		/* 動作：自己位置を(0, 0)にリセット 終了：自己位置更新完了 */
 		scenario.append({new DetectCount(),
-					 	 new TurnByLocalizer(0, 0, localizer)});
+					 	 new TurnByLocalizer(0, 0, 0, localizer)});
 	}
 	
 	/* 動作：ぴぽっど 終了：角度 */
@@ -333,7 +321,7 @@ static void createScenario(Scenario &scenario, import_params &importParams, Loca
 	for(int i = 0; i < 20; i++)
 	{
 		/* カメラ or ジャイロから情報取得 */
-		if(deviceForAdjust == 0)
+		if(deviceForAdjust == 0) // カメラの場合
 		{
 			/* 動作：カメラから情報取得 終了：?? */
 			// TODO: カメラの利用方法確認
@@ -345,9 +333,12 @@ static void createScenario(Scenario &scenario, import_params &importParams, Loca
 			// scenario.append({new DetectAngleforpic(target = Marker),
 			// 					new Pipodforpic(target = Marker)});
 		}
-		else
+		else // ジャイロの場合
 		{
-
+			/* 動作：ジャイロで自己位置推定 → 目標ターン角度を計算してcurrentTargetThetaに格納 → 一定のPWMで旋回 
+			   終了：currentTargetThetaに格納されている角度分のターンが完了 */
+			scenario.append({new DetectAngleForCurrentTargetValue(),
+					 	 	new TurnByLocalizer(goalX, goalY, fixedTurningAmount, localizer)});
 		}
 
 		/* 動作：直進 終了：指定時間走行*/
