@@ -1,9 +1,8 @@
 #include "module_common.h"
 
 // グローバル変数の実体
-int gBlueMinH, gBlueMaxH;
-int gBlueMinS, gBlueMaxS;
-int gBlueMinV, gBlueMaxV;
+HSVThreshold BLUE;
+HSVThreshold RED;
 int gBlack, gWhite;
 bool gCheck;
 int gSlaNo;

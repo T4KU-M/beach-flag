@@ -55,6 +55,9 @@ static void loadPidParams(double &kp, double &ki, double &kd, int num );
 #define BLUE_S 200
 #define BLUE_V 403
 
+// 赤色カラー検知
+#define RED_H 350
+
 // PIDの初期値ファイルで書き換えできる(pid数字.txt)
 //1:直線 2:カーブ 3:でかい丸 4:小さい丸
 #define KP1 0.35
@@ -74,6 +77,10 @@ static void loadPidParams(double &kp, double &ki, double &kd, int num );
 // 自動速度走行のプラスナイマス（一応残しとくけどわからん：檜山）
 #define SPEED_DELTA_MINUS 10
 #define SPEED_DELTA_PLUS 3
+
+// 追いかけるボトルの色を選択
+#define TARGET_BOTTLE_COLOR BLUE 
+// #define TARGET_BOTTLE_COLOR RED 
 
 // メインタスク
 extern void mainTask(intptr_t exinf)
@@ -98,12 +105,26 @@ void scenarioTask(intptr_t unused)
 	/*キャリブレーションの値かdefine値を使うかの選択*/
 	gBlack = BLACK_R;
 	gWhite = WHITE_R;
-	gBlueMaxH = BLUE_H + 100;
-	gBlueMinH = BLUE_H - 100;
-	gBlueMaxS = BLACK_R + 200;
-	gBlueMinS = BLACK_R + 30;
-	gBlueMaxV = 1023;
-	gBlueMinV = 400;
+	BLUE.maxH = BLUE_H + 50;
+	BLUE.minH = BLUE_H - 50;
+	BLUE.maxS = BLACK_R + 200;
+	BLUE.minS = BLACK_R + 30;
+	BLUE.maxV = 1023;
+	BLUE.minV = 400;
+	RED.maxH = RED_H + 50;
+	RED.minH = RED_H - 50;
+	RED.maxS = BLACK_R + 200;
+	RED.minS = BLACK_R + 30;
+	RED.maxV = 1023;
+	RED.minV = 400;
+	/*
+	HSV
+	青　211 168 59
+	赤　350 160 70
+	緑　150 120 52
+	黒　200 150 23
+	白　200 30 101
+	*/
 #ifdef CARIBRATION
 	calibration(gBlack, gWhite);
 #endif /*CARIBRATION*/
@@ -198,6 +219,14 @@ static void createScenario(Scenario &scenario)
 	//停止
 	scenario.append({new DetectStart(),
 					 new Stay()});
+
+	/*
+	// 走行：右ライントレース
+	// 検知：青色を検知
+	scenario.append({new DetectHsv(minH = gBlueMinH, maxH = gBlueMaxH, minS = gBlueMinS, maxS = gBlueMaxS, minV = gBlueMinV, maxV = gBlueMaxV),
+					 new Trace(lineEdge = Right, Kp = kp_test, Ki = ki_test, Kd = kd_test, steeringMin = -90, steeringMax = 90, speedMin = 55 + fix_speed_curb - SPEED_DELTA_MINUS, speedMax = 55 + fix_speed_curb + SPEED_DELTA_PLUS)});
+
+	*/
 }
 
 ///////////////////////キャリブレーション↓↓//////////////////////////////////////////////////////////////
@@ -303,14 +332,40 @@ static void calibration(int &black, int &white)
 		}
 		slp_tsk();
 	}
-	gBlueMaxH = h + 100;
-	gBlueMinH = h - 100;
-	gBlueMaxS = black + 200;
-	gBlueMinS = black + 30;
-	gBlueMaxV = 1024;
-	gBlueMinV = 400;
+	BLUE.maxH = h + 50;
+	BLUE.minH = h - 50;
+	BLUE.maxS = black + 200;
+	BLUE.minS = black + 30;
+	BLUE.maxV = 1024;
+	BLUE.minV = 400;
 	// アームを上げて下げる
 	movearm();
+
+	// 赤を取得する
+	printf("\n赤を取得\n");
+	int h, s, v;
+	HsvMeasure mHsvMeasure;
+	while (!detection4.detect())
+	{
+		mHsvMeasure.getHSV(h, s, v);
+		// 0.5秒毎にhsvを表示
+		if (++count == 50)
+		{
+			count = 0;
+			printf("\rhsv %3d %3d %3d", h, s, v);
+			fflush(stdout);
+		}
+		slp_tsk();
+	}
+	RED.maxH = h + 50;
+	RED.minH = h - 50;
+	RED.maxS = black + 200;
+	RED.minS = black + 30;
+	RED.maxV = 1024;
+	RED.minV = 400;
+	// アームを上げて下げる
+	movearm();
+
 	// 表示
 	printf("キャリブレーション 完了!\n");
 }

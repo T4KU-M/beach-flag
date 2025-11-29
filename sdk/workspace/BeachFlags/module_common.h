@@ -23,12 +23,21 @@ enum Target
     Gate = 0,
     Marker
 };
+// HSVしきい値をまとめる構造体
+struct HSVThreshold {
+    int minH;
+    int maxH;
+    int minS;
+    int maxS;
+    int minV;
+    int maxV;
+};
+
 const double pi = 3.14159265358979323846;
 
 // グローバル変数
-extern int gBlueMinH, gBlueMaxH;
-extern int gBlueMinS, gBlueMaxS;
-extern int gBlueMinV, gBlueMaxV;
+extern HSVThreshold BLUE;
+extern HSVThreshold RED;
 extern int gBlack, gWhite;
 extern bool gCheck;
 extern int gSlaNo;
