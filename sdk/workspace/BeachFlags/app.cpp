@@ -214,7 +214,7 @@ void scenarioTask(intptr_t unused)
 		currentTheta = -1;
 
 		// シナリオを作成する
-		createScenario(*pScenario, importParams, pLocalizer);
+		createScenario(*pScenario, importParams, *pLocalizer);
 
 		// 終了フラグ
 		bool complete = false;
@@ -269,14 +269,25 @@ static void createScenario(Scenario &scenario, import_params &importParams, Loca
 	Target target;
 
 	// ビーチフラッグ用に変数追加
-	int targetColor  			= importParams.targetColor;					// 何色のゴールを目指すか(0:R/1:G/2:B)
+	int targetColor  			= importParams.targetColor;					// 何色のゴールを目指すか(0:R/1:B)
 	int deviceForAdjust 		= importParams.deviceForAdjust;				// フィードバック走行にカメラを使うか、ジャイロを使うか(0:カメラ/1:ジャイロ)
 	int speed	 				= importParams.speed;						// 走行スピード(1~100)
 	int intervalForGettingFile 	= importParams.intervalForGettingFile;		// 何秒に一度ジャイロorカメラからファイルを取得するか(1~10[s])
 	double amountOfAdjust 		= importParams.amountOfAdjust / 5; 			// フィードバック制御時の制御量(1~10) 0.2 <= kp <= 2.0 の間くらいで動かすとする
 
+	// log
+	printf("BF: createScenario() called with params - targetColor: %d, deviceForAdjust: %d, speed: %d, intervalForGettingFile: %d, amountOfAdjust: %f\n",
+		   targetColor, deviceForAdjust, speed, intervalForGettingFile, amountOfAdjust);
+
+	// speedから秒速[mm]およびintervalForGettingFile[s]間走行する際の移動距離を算出
+	// 実験によりspeed = PWM = 50の時におよそ210mm/sで走行することが分かっている
+	// 単位速度はPWMに比例すると仮定して、4.2mm/(s*PWM) である
+	double speed_mm_per_s = 4.2 * speed; // [mm/s]
+	double travelDistance = speed_mm_per_s * intervalForGettingFile; // [mm]
+
+
 	// ビーチフラッグ 目標地点の座標
-	double goalX = -400.0; // スタート時、背を向けているところが基準になるので進行方向はマイナスの値
+	double goalX = -4000.0; // スタート時、背を向けているところが基準になるので進行方向はマイナスの値
 	double goalY = 0.0; 
 
 	// PID の初期値（デフォルト値）20250904////////////////////////////////////////////////////////////////////////////////////
@@ -309,12 +320,12 @@ static void createScenario(Scenario &scenario, import_params &importParams, Loca
 	{
 		/* 動作：自己位置を(0, 0)にリセット 終了：自己位置更新完了 */
 		scenario.append({new DetectCount(),
-					 	 new TurnByLocalizer(0, 0, 0, localizer)});
+		 			 	 new TurnByLocalizer(0, 0, 0, localizer)});
 	}
 	
 	/* 動作：ぴぽっど 終了：角度 */
-	scenario.append({new DetectAngle(178),
-					 new Pipod(Left)});
+	// scenario.append({new DetectAngle(178),
+	// 				 new Pipod(Left)});
 
 	// 走行 → 停止&情報取得 を何回繰り返すかわからない
 	// 400cm直進なので、まあ20セットくらいシナリオに入れておけば十分か？
@@ -338,11 +349,11 @@ static void createScenario(Scenario &scenario, import_params &importParams, Loca
 			/* 動作：ジャイロで自己位置推定 → 目標ターン角度を計算してcurrentTargetThetaに格納 → 一定のPWMで旋回 
 			   終了：currentTargetThetaに格納されている角度分のターンが完了 */
 			scenario.append({new DetectAngleForCurrentTargetValue(),
-					 	 	new TurnByLocalizer(goalX, goalY, fixedTurningAmount, localizer)});
+			 		 	 	new TurnByLocalizer(goalX, goalY, fixedTurningAmount, localizer)});
 		}
 
 		/* 動作：直進 終了：指定時間走行*/
-		scenario.append({new DetectTime(intervalForGettingFile),
+		scenario.append({new DetectDistance(travelDistance),
 					 	new Turn(fixedTurningAmount = 0, speedMin = speed, speedMax = speed, Kp = amountOfAdjust)});
 
 		/* 実験用 動作：停止 終了：指定時間経過*/
@@ -627,7 +638,7 @@ bool isForceSensorPressed(DetectStart &detectForceSensor)
 void getParamsFromFile(import_params &importParams)
 {
 	/*
-	int targetColor;				// 何色のゴールを目指すか(0:R/1:G/2:B)
+	int targetColor;				// 何色のゴールを目指すか(0:R/1:B)
 	int deviceForAdjust;			// フィードバック走行にカメラを使うか、ジャイロを使うか(0:カメラ/1:ジャイロ)
 	int speed;						// 走行スピード(1~100)
 	int intervalForGettingFile;		// 何秒に一度ジャイロorカメラからファイルを取得するか(1~10[s])

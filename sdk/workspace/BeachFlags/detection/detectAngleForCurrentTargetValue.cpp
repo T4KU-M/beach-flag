@@ -4,12 +4,12 @@
 
 // コンストラクタ
 DetectAngleForCurrentTargetValue::DetectAngleForCurrentTargetValue()
-	: mCalculateAngle(),
+	: mCalculateAngle()
 {
 }
 
 // 検知結果を確認する
-bool DetectAngle::detect()
+bool DetectAngleForCurrentTargetValue::detect()
 {
     // 現在の角度取得
 	double theta; // 単位：度

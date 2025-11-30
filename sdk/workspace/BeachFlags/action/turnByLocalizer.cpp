@@ -23,7 +23,7 @@ void TurnByLocalizer::determineSpeedAndSteering()
     if (mReset)
     {
         // 現在位置をグローバル変数に格納
-        mlocalizer.update();
+        mLocalizer.update();
         mLocalizer.coordinates(currentX, currentY, currentTheta);
 
         // 目標回転角度を計算し、detect系クラスから参照できるようにグローバル変数に格納する 

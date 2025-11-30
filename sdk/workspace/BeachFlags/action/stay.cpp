@@ -11,6 +11,8 @@ void Stay::determineSpeedAndSteering()
 	setSpeed(0);		// 速度をゼロにする
 	setSteering(0);		// 旋回量をゼロにする
 
+    printf("Stay::determineSpeedAndSteering()\n");
+
 	//20250819
 	// OpenCV が使えるか確認するテスト
     /*

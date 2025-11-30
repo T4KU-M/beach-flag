@@ -14,7 +14,7 @@ public:
 
 
 protected:
-	void determineSteering() override;
+	void determineSpeedAndSteering() override;
 
 private:
 	double mTargetX;
