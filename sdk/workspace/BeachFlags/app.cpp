@@ -46,7 +46,6 @@
 // createScenario()に渡すパラメータ群を保持する構造体
 struct import_params
 {
-	int targetColor;				// 何色のゴールを目指すか(0:R/1:B)
 	int deviceForAdjust;			// フィードバック走行にカメラを使うか、ジャイロを使うか(0:カメラ/1:ジャイロ)
 	int speed;						// 走行スピード(1~100)
 	int intervalForGettingFile;		// 何秒に一度ジャイロorカメラからファイルを取得するか(1~10[s])
@@ -157,13 +156,10 @@ void scenarioTask(intptr_t unused)
 	黒　200 150 23
 	白　200 30 101
 	*/
-	
-	gBlueMaxH = BLUE_H + 100;
-	gBlueMinH = BLUE_H - 100;
-	gBlueMaxS = BLACK_R + 200;
-	gBlueMinS = BLACK_R + 30;
-	gBlueMaxV = 1023;
-	gBlueMinV = 400;
+
+	// とりあえず実体化
+	import_params importParams;
+
 #ifdef CARIBRATION
 	calibration(gBlack, gWhite);
 #endif /*CARIBRATION*/
@@ -177,35 +173,9 @@ void scenarioTask(intptr_t unused)
 		// param_beach-flag.txt よりパラメータ値を取得
 		getParamsFromFile(importParams);
 
-		// 目的地の色を設定
-		switch(importParams.targetColor)
-		{
-			// RED
-			case 0:
-				MaxH = gRedMaxH;
-				MinH = gRedMinH;
-				MaxS = gRedMaxS;
-				MinS = gRedMinS;
-				MaxV = gRedMaxV;
-				MinV = gRedMinV;
-			break;
-
-			// BLUE
-			case 1:
-				MaxH = gBlueMaxH;
-				MinH = gBlueMinH;
-				MaxS = gBlueMaxS;
-				MinS = gBlueMinS;
-				MaxV = gBlueMaxV;
-				MinV = gBlueMinV;
-			break;
-
-			default:
-			break;
-		}
-
 		// 目的のカラーゾーンに到着したか検知するクラス
-		DetectHsv *detectColor = new DetectHsv(MinH, MaxH, MinS, MaxS, MinV, MaxV);
+		DetectHsv *detectColor = 
+			new DetectHsv(TARGET_BOTTLE_COLOR.minH, TARGET_BOTTLE_COLOR.maxH, TARGET_BOTTLE_COLOR.minS, TARGET_BOTTLE_COLOR.maxS, TARGET_BOTTLE_COLOR.minV, TARGET_BOTTLE_COLOR.maxV);
 
 		// フォースセンサ検知→中断用
 		// ここでインスタンス化しとかないとisForceSensorPressedが呼び出されるたびに状態がリセットされてしまう
@@ -270,21 +240,19 @@ static void createScenario(Scenario &scenario, import_params &importParams, Loca
 	// int brihgtnessMin, brightnessMax;
 	int fixedTurningAmount;
 	int TurningAmountForBeachFlag = 80; // ビーチフラッグ用に定数を設定 半時計回りが旋回量正
-	int minH, maxH, minS, maxS, minV, maxV;
+	// int minH, maxH, minS, maxS, minV, maxV;
 	double threTravelDistance;
 	LeftOrRight lineEdge, direction;
 	Target target;
 
-	// ビーチフラッグ用に変数追加
-	int targetColor  			= importParams.targetColor;					// 何色のゴールを目指すか(0:R/1:B)
 	int deviceForAdjust 		= importParams.deviceForAdjust;				// フィードバック走行にカメラを使うか、ジャイロを使うか(0:カメラ/1:ジャイロ)
 	int speed	 				= importParams.speed;						// 走行スピード(1~100)
 	int intervalForGettingFile 	= importParams.intervalForGettingFile;		// 何秒に一度ジャイロorカメラからファイルを取得するか(1~10[s])
 	double amountOfAdjust 		= importParams.amountOfAdjust / 5; 			// フィードバック制御時の制御量(1~10) 0.2 <= kp <= 2.0 の間くらいで動かすとする
 
 	// log
-	printf("BF: createScenario() called with params - targetColor: %d, deviceForAdjust: %d, speed: %d, intervalForGettingFile: %d, amountOfAdjust: %f\n",
-		   targetColor, deviceForAdjust, speed, intervalForGettingFile, amountOfAdjust);
+	printf("BF: createScenario() called with params - targetColor: %s, deviceForAdjust: %d, speed: %d, intervalForGettingFile: %d, amountOfAdjust: %f\n",
+		   TARGET_BOTTLE_COLOR, deviceForAdjust, speed, intervalForGettingFile, amountOfAdjust);
 
 	// speedから秒速[mm]およびintervalForGettingFile[s]間走行する際の移動距離を算出
 	// 実験によりspeed = PWM = 50の時におよそ210mm/sで走行することが分かっている
@@ -473,10 +441,11 @@ static void calibration(int &black, int &white)
 	// アームを上げて下げる
 	movearm();
 
-	// 青を取得する
-	printf("\n青を取得\n");
+	// 青、赤を取得する
 	int h, s, v;
 	HsvMeasure mHsvMeasure;
+	// 青を取得する
+	printf("\n青を取得\n");
 	while (!detection4.detect())
 	{
 		mHsvMeasure.getHSV(h, s, v);
@@ -500,8 +469,6 @@ static void calibration(int &black, int &white)
 
 	// 赤を取得する
 	printf("\n赤を取得\n");
-	int h, s, v;
-	HsvMeasure mHsvMeasure;
 	while (!detection4.detect())
 	{
 		mHsvMeasure.getHSV(h, s, v);
@@ -684,7 +651,6 @@ bool isForceSensorPressed(DetectStart &detectForceSensor)
 void getParamsFromFile(import_params &importParams)
 {
 	/*
-	int targetColor;				// 何色のゴールを目指すか(0:R/1:B)
 	int deviceForAdjust;			// フィードバック走行にカメラを使うか、ジャイロを使うか(0:カメラ/1:ジャイロ)
 	int speed;						// 走行スピード(1~100)
 	int intervalForGettingFile;		// 何秒に一度ジャイロorカメラからファイルを取得するか(1~10[s])
@@ -693,7 +659,7 @@ void getParamsFromFile(import_params &importParams)
 	
 	// デフォルト値
 	// TODO: デフォルト値決定
-	import_params defaultValues = {1, 0, 0, 1, 1};
+	import_params defaultValues = {0, 0, 1, 1};
 
 	std::ifstream paramFile(importFilePath);
 	std::vector<int> inputs;
@@ -702,7 +668,6 @@ void getParamsFromFile(import_params &importParams)
 		printf("BF: failed to get parameters from file.\n");
 
 		// ファイルが無ければデフォルト値を設定
-		importParams.targetColor 			= defaultValues.targetColor;
 		importParams.deviceForAdjust 		= defaultValues.deviceForAdjust;
 		importParams.speed 					= defaultValues.speed;
 		importParams.intervalForGettingFile = defaultValues.intervalForGettingFile;
@@ -730,7 +695,6 @@ void getParamsFromFile(import_params &importParams)
 		}
 
 		// 最大値・最小値と比較し、仕様範囲外の場合デフォルト値を設定
-		importParams.targetColor 			= (0 <= inputs[0] && inputs[0] <= 2)? 	inputs[0] : defaultValues.targetColor;
 		importParams.deviceForAdjust 		= (0 <= inputs[1] && inputs[1] <= 1)? 	inputs[1] : defaultValues.deviceForAdjust;
 		importParams.speed 					= (1 <= inputs[2] && inputs[2] <= 100)? inputs[2] : defaultValues.speed;
 		importParams.intervalForGettingFile = (1 <= inputs[3] && inputs[3] <= 10)? 	inputs[3] : defaultValues.intervalForGettingFile;
