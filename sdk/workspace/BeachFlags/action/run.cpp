@@ -51,6 +51,9 @@ void Run::determineSpeed()
     int speed = mSpeedMax - 0.25 * std::sqrt(mEMVar);
     if (speed < mSpeedMin) speed = mSpeedMin;
 
+    // log
+    printf("Run::determineSpeed() brightness: %d, EMVar: %f, speed: %d\n", mBrightness, mEMVar, speed);
+
     setSpeed(speed);
 }
 

@@ -45,4 +45,6 @@ extern double targetdistance;
 extern double angleSum;
 extern int findgate;
 
+
+
 #endif

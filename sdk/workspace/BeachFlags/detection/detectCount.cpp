@@ -3,24 +3,43 @@
 
 // コンストラクタ
 DetectCount::DetectCount()
-	:  mTemp(0), mCount(0)
+	:  mTemp(0), mCount(0), mdetectCount(0)
 {
 }
 
-// 検知結果を確認する
+// ビーチフラッグ用魔改造
+// 自己位置を更新し終わっているかどうかを検知する
 bool DetectCount::detect()
 {
 	mCount++;
-	printf("%d\n",mCount);
+	//printf("%d\n",mCount);
 
 	if(mCount < 5){
-		mTemp = (int)targetangle;
-		return 0;
+		return false;
 	}
 
-	if(mCount > 3*100){
-		return 1;
+	else if(mCount > 3*100){
+		return true;
 	}
 
-	return ((int)targetangle == (int)mTemp)? 0:1;
+	else if(mdetectCount == 10)
+	{
+		return true;
+	}
+
+	else
+	{
+		printf("DetectCount::detect() mCount=%d currentX=%f mTemp=%f\n",mCount,currentX,mTemp);
+		if(currentX != mTemp)
+		{
+			mdetectCount = 0;
+			mTemp = currentX;
+		}
+		else
+		{
+			mdetectCount++;
+		}
+		return false;
+	}
+	
 }

@@ -49,4 +49,11 @@ extern double targetangle;
 extern double targetdistance;
 extern double angleSum;
 
+// ビーチフラッグ用に追加
+extern int gRedMinH, gRedMaxH;
+extern int gRedMinS, gRedMaxS;
+extern int gRedMinV, gRedMaxV;
+extern double currentX, currentY, currentTheta;
+extern double currentTargetTheta; // 可変量の旋回検知に対応するための変数
+
 #endif

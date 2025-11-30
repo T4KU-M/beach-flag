@@ -4,9 +4,10 @@
 //#include "MotorPair.h"
 
 // コンストラクタ
-Turn::Turn(int fixedTurningAmount, int speedMin, int speedMax)
-	: Run(speedMin, speedMax), mFixedTurningAmount(fixedTurningAmount), mSpeedMin(speedMin), mReset(true)
+Turn::Turn(int fixedTurningAmount, int speedMin, int speedMax, double kp)
+	: Run(speedMin, speedMax), mFixedTurningAmount(fixedTurningAmount), mSpeedMin(speedMin), kp(kp), mReset(true)
 {
+	printf("Turn::Turn()\n");
 }
 
 // 旋回量を決定する(override)
@@ -22,7 +23,7 @@ void Turn::determineSteering()
 		}
 
 		double u = 0.0;
-		double kp = 1.0;
+		// double kp = 1.0;
 		int plusMinus = -1;
 		if(mSpeedMin<0){plusMinus = 1;}
 
@@ -42,6 +43,7 @@ void Turn::determineSteering()
 
 
 		setSteering(mFixedTurningAmount);
+		printf("Turn::determineSteering()\n");
 	}
 	else
 	{
