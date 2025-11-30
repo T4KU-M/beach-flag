@@ -3,7 +3,7 @@
 
 // コンストラクタ
 DetectCount::DetectCount()
-	:  mTemp(0), mCount(0)
+	:  mTemp(0), mCount(0), mdetectCount(0)
 {
 }
 
@@ -12,16 +12,34 @@ DetectCount::DetectCount()
 bool DetectCount::detect()
 {
 	mCount++;
-	printf("%d\n",mCount);
+	//printf("%d\n",mCount);
 
 	if(mCount < 5){
-		mTemp = currentX;
 		return false;
 	}
 
-	if(mCount > 3*100){
+	else if(mCount > 3*100){
 		return true;
 	}
 
-	return (currentX == mTemp)? false : true;
+	else if(mdetectCount == 10)
+	{
+		return true;
+	}
+
+	else
+	{
+		printf("DetectCount::detect() mCount=%d currentX=%f mTemp=%f\n",mCount,currentX,mTemp);
+		if(currentX != mTemp)
+		{
+			mdetectCount = 0;
+			mTemp = currentX;
+		}
+		else
+		{
+			mdetectCount++;
+		}
+		return false;
+	}
+	
 }

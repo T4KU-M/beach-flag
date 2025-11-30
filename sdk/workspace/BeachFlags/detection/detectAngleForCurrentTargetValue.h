@@ -14,7 +14,7 @@ public:
 
 private:
 	CalculateAngle mCalculateAngle;
-	double mTargetAngle; // 単位：度
+	int mTargetAngle; // 単位：度
 };
 
 #endif

@@ -16,8 +16,14 @@ bool DetectAngleForCurrentTargetValue::detect()
 	mCalculateAngle.update();
 	mCalculateAngle.getangle(theta);
 
-    mTargetAngle = currentTargetTheta * 180/3.1415; // radian -> degree
-	printf("現在の角度：%f, 目標値：%f\n",theta, mTargetAngle);
+    mTargetAngle = ((int)(currentTargetTheta * 180/3.1415)) % 360; // radian -> degree
+	if(mTargetAngle > 180){
+		mTargetAngle -= 360;
+	}
+	// else if(mTargetAngle < -180){
+	// 	mTargetAngle += 360;
+	// }
+	printf("現在の角度：%f, 目標値：%d\n",theta, mTargetAngle);
 
     // 目標角度と比較して検知
 	

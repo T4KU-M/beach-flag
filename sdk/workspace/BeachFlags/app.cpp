@@ -159,9 +159,7 @@ void scenarioTask(intptr_t unused)
 	// 入力パラメータ格納用の構造体を初期化
 	import_params importParams = {-1, -1, -1, -1, -1};
 
-	// フォースセンサ検知→中断用
-	// ここでインスタンス化しとかないとisForceSensorPressedが呼び出されるたびに状態がリセットされてしまう
-	DetectStart detectForceSensor;
+	
 
 #ifdef CARIBRATION
 	calibration(gBlack, gWhite);
@@ -206,6 +204,10 @@ void scenarioTask(intptr_t unused)
 		// 目的のカラーゾーンに到着したか検知するクラス
 		DetectHsv *detectColor = new DetectHsv(MinH, MaxH, MinS, MaxS, MinV, MaxV);
 
+		// フォースセンサ検知→中断用
+		// ここでインスタンス化しとかないとisForceSensorPressedが呼び出されるたびに状態がリセットされてしまう
+		DetectStart *detectForceSensor = new DetectStart();
+
 		// シナリオ作成用変数
 		Scenario *pScenario = new Scenario();
 		Localizer *pLocalizer = new Localizer();
@@ -222,7 +224,7 @@ void scenarioTask(intptr_t unused)
 		do
 		{
 			// 新規関数 フォースセンサが押されていないかチェック
-			if(isForceSensorPressed(detectForceSensor))
+			if(isForceSensorPressed(*detectForceSensor))
 			{
 				printf("BF: stop!\n");
 				break;
@@ -243,6 +245,7 @@ void scenarioTask(intptr_t unused)
 		delete pScenario;
 		delete pLocalizer;
 		delete detectColor;
+		delete detectForceSensor;
 
 		pup_motor_set_power(gRobot.leftMotor(), 0);
 		pup_motor_set_power(gRobot.rightMotor(), 0);
@@ -262,7 +265,8 @@ static void createScenario(Scenario &scenario, import_params &importParams, Loca
 	int speedMin, speedMax;
 	int steeringMin, steeringMax;
 	// int brihgtnessMin, brightnessMax;
-	int fixedTurningAmount = 50; // ビーチフラッグ用に定数を設定 半時計回りが旋回量正
+	int fixedTurningAmount;
+	int TurningAmountForBeachFlag = 80; // ビーチフラッグ用に定数を設定 半時計回りが旋回量正
 	int minH, maxH, minS, maxS, minV, maxV;
 	double threTravelDistance;
 	LeftOrRight lineEdge, direction;
@@ -282,12 +286,13 @@ static void createScenario(Scenario &scenario, import_params &importParams, Loca
 	// speedから秒速[mm]およびintervalForGettingFile[s]間走行する際の移動距離を算出
 	// 実験によりspeed = PWM = 50の時におよそ210mm/sで走行することが分かっている
 	// 単位速度はPWMに比例すると仮定して、4.2mm/(s*PWM) である
-	double speed_mm_per_s = 4.2 * speed; // [mm/s]
+	// double speed_mm_per_s = 4.2 * speed; // [mm/s]
+	double speed_mm_per_s = 3.8 * speed; // [mm/s]
 	double travelDistance = speed_mm_per_s * intervalForGettingFile; // [mm]
 
 
 	// ビーチフラッグ 目標地点の座標
-	double goalX = -4000.0; // スタート時、背を向けているところが基準になるので進行方向はマイナスの値
+	double goalX = 4000.0; // スタート時、背を向けているところが基準になるので進行方向はマイナスの値
 	double goalY = 0.0; 
 
 	// PID の初期値（デフォルト値）20250904////////////////////////////////////////////////////////////////////////////////////
@@ -316,16 +321,20 @@ static void createScenario(Scenario &scenario, import_params &importParams, Loca
 #endif /*SETPIDFROMFILE*/
 	///////////////////////ここが本番のシナリオの中身////////////////////////////////////////////////////////
 
+	/* 動作：ぴぽっど 終了：角度 */
+	scenario.append({new DetectAngle(170),
+	  				 new Pipod(Left)});
+	
+	/* 慣性で動くのを止めたい 動作：停止 終了：指定時間経過*/
+	scenario.append({new DetectTime(intervalForGettingFile),
+	 	 			new Stay()});
+	
 	if(deviceForAdjust == 1) // ジャイロ使用の場合
 	{
 		/* 動作：自己位置を(0, 0)にリセット 終了：自己位置更新完了 */
 		scenario.append({new DetectCount(),
-		 			 	 new TurnByLocalizer(0, 0, 0, localizer)});
+		  			 	 new TurnByLocalizer(0, 0, 0, localizer)});
 	}
-	
-	/* 動作：ぴぽっど 終了：角度 */
-	// scenario.append({new DetectAngle(178),
-	// 				 new Pipod(Left)});
 
 	// 走行 → 停止&情報取得 を何回繰り返すかわからない
 	// 400cm直進なので、まあ20セットくらいシナリオに入れておけば十分か？
@@ -349,16 +358,16 @@ static void createScenario(Scenario &scenario, import_params &importParams, Loca
 			/* 動作：ジャイロで自己位置推定 → 目標ターン角度を計算してcurrentTargetThetaに格納 → 一定のPWMで旋回 
 			   終了：currentTargetThetaに格納されている角度分のターンが完了 */
 			scenario.append({new DetectAngleForCurrentTargetValue(),
-			 		 	 	new TurnByLocalizer(goalX, goalY, fixedTurningAmount, localizer)});
+			  		 	 	new TurnByLocalizer(goalX, goalY, TurningAmountForBeachFlag, localizer)});
 		}
 
 		/* 動作：直進 終了：指定時間走行*/
 		scenario.append({new DetectDistance(travelDistance),
-					 	new Turn(fixedTurningAmount = 0, speedMin = speed, speedMax = speed, Kp = amountOfAdjust)});
+		 			 	new Turn(fixedTurningAmount = 0, speedMin = speed, speedMax = speed, Kp = amountOfAdjust)});
 
 		/* 実験用 動作：停止 終了：指定時間経過*/
-		// scenario.append({new DetectTime(intervalForGettingFile),
-		// 			 	new Stay()});
+		scenario.append({new DetectTime(intervalForGettingFile),
+		  			 	new Stay()});
 	}			 
 	
 	//停止

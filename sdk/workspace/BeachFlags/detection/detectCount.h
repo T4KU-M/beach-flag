@@ -13,6 +13,7 @@ public:
 private:
     double mTemp;
 	int mCount;
+	int mdetectCount;
 
 };
 

@@ -10,7 +10,7 @@ class TurnByLocalizer : public Act
 {
 
 public:
-	TurnByLocalizer(double targetX, double targetY, int fixedTurningAmount, Localizer &localizer);
+	TurnByLocalizer(double targetX, double targetY, int TurningAmountForBeachFlag, Localizer &localizer);
 
 
 protected:
