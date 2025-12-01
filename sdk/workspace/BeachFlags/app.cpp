@@ -43,6 +43,9 @@
 #include <iostream>
 #include <fstream>
 
+#include "writefile.h"
+#include "detectRead.h"
+
 // createScenario()に渡すパラメータ群を保持する構造体
 struct import_params
 {
@@ -306,6 +309,10 @@ static void createScenario(Scenario &scenario, import_params &importParams, Loca
 		scenario.append({new DetectCount(),
 		  			 	 new TurnByLocalizer(0, 0, 0, localizer)});
 	}
+	else{
+		scenario.append({new DetectCount(5),
+		  			 	 new Writefile()});
+	}
 
 	// 走行 → 停止&情報取得 を何回繰り返すかわからない
 	// 400cm直進なので、まあ20セットくらいシナリオに入れておけば十分か？
@@ -319,6 +326,14 @@ static void createScenario(Scenario &scenario, import_params &importParams, Loca
 
 			// scenario.append({new DetectCount(),
 			// 		 new Stay()});	
+			scenario.append({new DetectCount(100),
+							 new Stay()});
+
+			scenario.append({new DetectRead(),
+							 new Readfile()});
+
+			scenario.append({new DetectAngleforpic(target = Marker), 
+							 new Pipodforpic(target = Marker)});	
 			// scenario.append({new DetectRead(),
 			// 					new Readfile()});
 			// scenario.append({new DetectAngleforpic(target = Marker),
