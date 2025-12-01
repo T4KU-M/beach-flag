@@ -4,7 +4,7 @@ mkfile_path := $(dir $(lastword $(MAKEFILE_LIST)))
 
 APPL_CXXOBJS += act.o run.o stay.o trace.o trace_blue.o turn.o loopFrontAndBack.o pipod.o readfile.o pipodforpic.o turnByLocalizer.o writefile.o\
 	hsvMeasure.o localizer.o calculateAngle.o \
-	detect.o detectBrightness.o  detectDistance.o detectStart.o detectAngle.o detectAngleForCurrentTargetValue.o detectCount.o  detectHsv.o detectMotorAngle.o detectSonar.o detectSonarOrDistance.o  detectgCheck.o detectAngleforpic.o detectTime.o detectRead.o\
+	detect.o detectBrightness.o  detectDistance.o detectStart.o detectAngle.o detectAngleForCurrentTargetValue.o detectCount.o  detectHsv.o detectMotorAngle.o detectSonar.o detectSonarOrDistance.o  detectgCheck.o detectAngleforpic.o detectTime.o detectRead.o detectSimpleCount.o\
 	scenario.o robot.o module_common.o 
 
 SRCLANG := c++

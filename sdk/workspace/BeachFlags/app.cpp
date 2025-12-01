@@ -45,6 +45,7 @@
 
 #include "writefile.h"
 #include "detectRead.h"
+#include "detectSimpleCount.h"
 
 // createScenario()に渡すパラメータ群を保持する構造体
 struct import_params
@@ -310,7 +311,7 @@ static void createScenario(Scenario &scenario, import_params &importParams, Loca
 		  			 	 new TurnByLocalizer(0, 0, 0, localizer)});
 	}
 	else{
-		scenario.append({new DetectCount(5),
+		scenario.append({new DetectSimpleCount(5),
 		  			 	 new Writefile()});
 	}
 
@@ -326,7 +327,7 @@ static void createScenario(Scenario &scenario, import_params &importParams, Loca
 
 			// scenario.append({new DetectCount(),
 			// 		 new Stay()});	
-			scenario.append({new DetectCount(100),
+			scenario.append({new DetectSimpleCount(100),
 							 new Stay()});
 
 			scenario.append({new DetectRead(),
