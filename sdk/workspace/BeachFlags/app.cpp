@@ -66,7 +66,7 @@ static void loadPidParams(double &kp, double &ki, double &kd, int num );
 static void waitForForceSensor();
 static bool isForceSensorPressed(DetectStart &detectForceSensor);
 static void getParamsFromFile(import_params &importParams);
-static std::string importFilePath = "/home/AC130/RasPike-ART/sdk/workspace/param_beach-flag/param_beach-flag.txt";
+static std::string importFilePath = "/param_beach-flag/param_beach-flag.txt";
 
 /////////キャリブレーションで書き換え///////////////////////////////////////////////////////////////////////
 //#define CARIBRATION // コメント外すと実行
