@@ -23,7 +23,7 @@ void Turn::determineSteering() // 左右のモータのエンコーダのずれ�
 		}
 
 		double u = 0.0;
-		// double kp = 1.0;
+		const double kp_counst = 1.0;
 		int plusMinus = -1;
 		if(mSpeedMin<0){plusMinus = 1;}
 
@@ -35,7 +35,8 @@ void Turn::determineSteering() // 左右のモータのエンコーダのずれ�
 		deltAngle  = rightCount - leftCount;
 		
 		// P制御（比例）
-		u = plusMinus * kp * deltAngle;
+		// u = plusMinus * kp * deltAngle;
+		u = plusMinus * kp_counst * deltAngle;
 
 		int mFixedTurningAmount = (int)u;
 		mFixedTurningAmount = (mFixedTurningAmount > 10) ? 10 : mFixedTurningAmount;
