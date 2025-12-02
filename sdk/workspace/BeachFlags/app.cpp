@@ -67,7 +67,7 @@ static void loadPidParams(double &kp, double &ki, double &kd, int num );
 static void waitForForceSensor();
 static bool isForceSensorPressed(DetectStart &detectForceSensor);
 static void getParamsFromFile(import_params &importParams);
-static std::string importFilePath = "/param_beach-flag/param_beach-flag.txt";
+static std::string importFilePath = "param_beach-flag/param_beach-flag.txt";
 
 /////////キャリブレーションで書き換え///////////////////////////////////////////////////////////////////////
 //#define CARIBRATION // コメント外すと実行
@@ -675,7 +675,7 @@ void getParamsFromFile(import_params &importParams)
 	
 	// デフォルト値
 	// TODO: デフォルト値決定
-	import_params defaultValues = {0, 0, 1, 1};
+	import_params defaultValues = {0, 30, 1, 1};
 
 	std::ifstream paramFile(importFilePath);
 	std::vector<int> inputs;
