@@ -14,11 +14,12 @@ public:
 
 protected:
 	virtual void determineSpeedAndSteering();
-	void setSpeed(int value);
+	virtual void setSpeed(int value);
 	void setSteering(int value);
+	static int mSpeed;
 
 private:
-	static int mSpeed, mSteering;
+	static int mSteering;
 };
 
 #endif

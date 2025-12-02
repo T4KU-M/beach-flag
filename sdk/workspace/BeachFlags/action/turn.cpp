@@ -5,7 +5,7 @@
 
 // コンストラクタ
 Turn::Turn(int fixedTurningAmount, int speedMin, int speedMax, double kp)
-	: Run(speedMin, speedMax), mFixedTurningAmount(fixedTurningAmount), mSpeedMin(speedMin), kp(kp), mReset(true)
+	: Run(speedMin, speedMax), mFixedTurningAmount(fixedTurningAmount), mSpeedMin(speedMin), kp(kp), mReset(true), cycle_count(0)
 {
 	printf("Turn::Turn()\n");
 }
@@ -13,6 +13,7 @@ Turn::Turn(int fixedTurningAmount, int speedMin, int speedMax, double kp)
 // 旋回量を決定する(override)
 void Turn::determineSteering()
 {
+	this->cycle_count = this->cycle_count + 1; // カウントアップ
 	if(mFixedTurningAmount==0 && mSpeedMin!=0)
 	{
 		if (mReset)
@@ -50,4 +51,27 @@ void Turn::determineSteering()
 		setSteering(mFixedTurningAmount);
 	}
 
+}
+
+void Turn::setSpeed(int value)
+{
+	this->cycle_count = this->cycle_count + 1; // カウントアップ
+	kp = int(this->kp * 5); // 元に戻すよーん
+	// 値を -100 ～ 100 の範囲に制限
+	value = (value < -100) ? -100 : ((value > 100) ? 100 : value);
+
+    // valueを-100~-45, 45~100の範囲に変換
+    if (value < 0){
+        value = -100 + ( (value + 100) * (55.0 / 100.0) );  // 55 = -45 - (-100)
+    }else{
+        value = 45 + ( value * (55.0 / 100.0) );            // 55 = 100 - 45
+    }
+	if (this->cycle_count % 20 == 0) {
+		if (value < 0){
+			kp = kp * -1;
+		}
+		value = value + kp;
+		printf("add acceleration kp: %f\n", kp);
+	}
+	mSpeed = value;
 }

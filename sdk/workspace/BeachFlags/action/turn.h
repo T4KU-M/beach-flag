@@ -13,12 +13,14 @@ public:
 
 protected:
 	void determineSteering() override;
+	void setSpeed(int value) override;
 
 private:
 	const int mFixedTurningAmount;
 	int mSpeedMin;
 	bool mReset;
 	double kp;
+	int cycle_count;
 };
 
 #endif
