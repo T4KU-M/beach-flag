@@ -14,12 +14,12 @@ public:
 
 protected:
 	virtual void determineSpeedAndSteering();
-	virtual void setSpeed(int value);
+	void setSpeed(int value);
 	void setSteering(int value);
-	static int mSpeed;
 
 private:
-	static int mSteering;
+	static int mSpeed, mSteering;
+	void mapToEffectivePWM(int* value);
 };
 
 #endif

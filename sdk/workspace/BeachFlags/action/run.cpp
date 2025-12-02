@@ -10,7 +10,11 @@ double Run::mEMVar;
 
 // コンストラクタ
 Run::Run(int speedMin, int speedMax)
-    : Act(), mSpeedMin(speedMin), mSpeedMax(speedMax), mBrightness()
+    : Act(), mSpeedMin(speedMin), mSpeedMax(speedMax), mBrightness(), cycle_count(0), currentSpeed(40), kp(1.0)
+{
+}
+Run::Run(int speedMin, int speedMax, double kp)
+    : Act(), mSpeedMin(speedMin), mSpeedMax(speedMax), mBrightness(), cycle_count(0), currentSpeed(40), kp(kp)
 {
 }
 
@@ -36,25 +40,32 @@ void Run::determineSteering()
 // 速度を決定する
 void Run::determineSpeed()
 {
-    // SPIKEのget_color_rgbを使ってRGB値を取得
-    auto rgb = pup_color_sensor_rgb(gRobot.colorSensor());
+    // // SPIKEのget_color_rgbを使ってRGB値を取得
+    // auto rgb = pup_color_sensor_rgb(gRobot.colorSensor());
 
-    // 明るさの定義（最も低い値を使用＝黒に近い）
-    // 簡単で安全な方法
-    mBrightness = std::min(std::min(rgb.r, rgb.g), rgb.b);
+    // // 明るさの定義（最も低い値を使用＝黒に近い）
+    // // 簡単で安全な方法
+    // mBrightness = std::min(std::min(rgb.r, rgb.g), rgb.b);
 
 
-    // 反射光の強度の移動分散を計算する
-    calculateBrightnessVariance();
+    // // 反射光の強度の移動分散を計算する
+    // calculateBrightnessVariance();
 
-    // 速度を決定（分散に応じて減速）
-    int speed = mSpeedMax - 0.25 * std::sqrt(mEMVar);
-    if (speed < mSpeedMin) speed = mSpeedMin;
+    // // 速度を決定（分散に応じて減速）
+    // int speed = mSpeedMax - 0.25 * std::sqrt(mEMVar);
+    // if (speed < mSpeedMin) speed = mSpeedMin;
 
-    // log
-    printf("Run::determineSpeed() brightness: %d, EMVar: %f, speed: %d\n", mBrightness, mEMVar, speed);
+    // // log
+    // printf("Run::determineSpeed() brightness: %d, EMVar: %f, speed: %d\n", mBrightness, mEMVar, speed);
 
-    setSpeed(speed);
+    this->cycle_count = this->cycle_count + 1; // カウントアップ
+    double kp = int(this->kp * 5); // 元に戻すよーん
+    if (this->cycle_count % 20 == 0) // 200msごとに速度更新(わんちゃん周期違う説あるんですけども。あと吉田さん曰く、200msの変化はいい感じに人間が認識できるらしい)
+    {
+        this->currentSpeed = this->currentSpeed + kp;
+    }
+
+    setSpeed(this->currentSpeed);
 }
 
 // 反射光の強度の移動分散を計算する
