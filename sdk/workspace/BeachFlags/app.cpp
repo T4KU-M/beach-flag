@@ -675,7 +675,7 @@ void getParamsFromFile(import_params &importParams)
 	
 	// デフォルト値
 	// TODO: デフォルト値決定
-	import_params defaultValues = {0, 30, 1, 1};
+	import_params defaultValues = {0, 60, 1, 5};
 
 	std::ifstream paramFile(importFilePath);
 	std::vector<int> inputs;
