@@ -350,7 +350,7 @@ static void createScenario(Scenario &scenario, import_params &importParams, Loca
 
 		/* 動作：直進 終了：指定時間走行*/
 		scenario.append({new DetectDistance(travelDistance),
-		 			 	new Turn(fixedTurningAmount = 0, speedMin = speed, speedMax = speed, Kp = amountOfAdjust)});
+		 			 	new Turn(fixedTurningAmount = 0, speedMin = 1, speedMax = speed, Kp = amountOfAdjust)});
 
 		/* 実験用 動作：停止 終了：指定時間経過*/
 		scenario.append({new DetectTime(intervalForGettingFile),
