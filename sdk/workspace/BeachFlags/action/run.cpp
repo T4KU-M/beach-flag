@@ -10,11 +10,11 @@ double Run::mEMVar;
 
 // コンストラクタ
 Run::Run(int speedMin, int speedMax)
-    : Act(), mSpeedMin(speedMin), mSpeedMax(speedMax), mBrightness(), cycle_count(0), currentSpeed(40), kp(1.0)
+    : Act(), mSpeedMin(speedMin), mSpeedMax(speedMax), mBrightness(), cycle_count(0), currentSpeed(0), kp(1.0)
 {
 }
 Run::Run(int speedMin, int speedMax, double kp)
-    : Act(), mSpeedMin(speedMin), mSpeedMax(speedMax), mBrightness(), cycle_count(0), currentSpeed(40), kp(kp)
+    : Act(), mSpeedMin(speedMin), mSpeedMax(speedMax), mBrightness(), cycle_count(0), currentSpeed(0), kp(kp)
 {
 }
 
@@ -63,6 +63,14 @@ void Run::determineSpeed()
     if (this->cycle_count % 20 == 0) // 200msごとに速度更新(わんちゃん周期違う説あるんですけども。あと吉田さん曰く、200msの変化はいい感じに人間が認識できるらしい)
     {
         this->currentSpeed = this->currentSpeed + kp;
+    }
+    if (this->currentSpeed > this->mSpeedMax)
+    {
+        this->currentSpeed = this->mSpeedMax;
+    }
+    if (this->currentSpeed < this->mSpeedMin) // まあ、これにはならんけど一応書いとくわ
+    {
+        this->currentSpeed = this->mSpeedMin;
     }
 
     setSpeed(this->currentSpeed);
