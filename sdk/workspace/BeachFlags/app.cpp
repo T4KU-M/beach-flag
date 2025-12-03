@@ -254,6 +254,15 @@ static void createScenario(Scenario &scenario, import_params &importParams, Loca
 	int intervalForGettingFile 	= importParams.intervalForGettingFile;		// 何秒に一度ジャイロorカメラからファイルを取得するか(1~10[s])
 	double amountOfAdjust 		= importParams.amountOfAdjust / 5; 			// フィードバック制御時の制御量(1~10) 0.2 <= kp <= 2.0 の間くらいで動かすとする
 
+	// 走行+停止が1〜3秒になって欲しい
+	// 走行時間は1秒、停止時間は0〜2秒とする
+	// 入力数値(intervalForGettingFile)は1〜10
+	// 停止時間 = (intervalForGettingFile - 1) * 2/9
+	// 入力値 = {round [{(intervalForGettingFile - 1) * 2/9 + 1} * 100]} - 100
+	int intervalForRunning = 100; // 単位：[10ms]
+	int multipleConst = 100;
+	double intervalForStopping = std::round(((intervalForGettingFile - 1) * 2 / 9 + 1) * multipleConst) - intervalForRunning;
+
 	// log
 	printf("BF: createScenario() called with params - targetColor: %s, deviceForAdjust: %d, speed: %d, intervalForGettingFile: %d, amountOfAdjust: %f\n",
 		   TARGET_BOTTLE_COLOR, deviceForAdjust, speed, intervalForGettingFile, amountOfAdjust);
@@ -262,8 +271,8 @@ static void createScenario(Scenario &scenario, import_params &importParams, Loca
 	// 実験によりspeed = PWM = 50の時におよそ210mm/sで走行することが分かっている
 	// 単位速度はPWMに比例すると仮定して、4.2mm/(s*PWM) である
 	// double speed_mm_per_s = 4.2 * speed; // [mm/s]
-	double speed_mm_per_s = 3.8 * speed; // [mm/s]
-	double travelDistance = speed_mm_per_s * intervalForGettingFile; // [mm]
+	// double speed_mm_per_s = 3.8 * speed; // [mm/s]
+	// double travelDistance = speed_mm_per_s * intervalForGettingFile; // [mm]
 
 
 	// ビーチフラッグ 目標地点の座標
@@ -311,6 +320,7 @@ static void createScenario(Scenario &scenario, import_params &importParams, Loca
 		  			 	 new TurnByLocalizer(0, 0, 0, localizer)});
 	}
 	else{
+		/* カメラ起動 */
 		scenario.append({new DetectSimpleCount(5),
 		  			 	 new Writefile()});
 	}
@@ -322,23 +332,17 @@ static void createScenario(Scenario &scenario, import_params &importParams, Loca
 		/* カメラ or ジャイロから情報取得 */
 		if(deviceForAdjust == 0) // カメラの場合
 		{
-			/* 動作：カメラから情報取得 終了：?? */
-			// TODO: カメラの利用方法確認
+			/* 動作：カメラから情報取得 終了：補正動作完了 */
 
-			// scenario.append({new DetectCount(),
-			// 		 new Stay()});	
-			scenario.append({new DetectSimpleCount(100),
-							 new Stay()});
+			// Read用の待ち時間はあえてシナリオに追加しない
+			// scenario.append({new DetectSimpleCount(100),
+			// 				 new Stay()});
 
 			scenario.append({new DetectRead(),
 							 new Readfile()});
 
 			scenario.append({new DetectAngleforpic(target = Marker), 
-							 new Pipodforpic(target = Marker)});	
-			// scenario.append({new DetectRead(),
-			// 					new Readfile()});
-			// scenario.append({new DetectAngleforpic(target = Marker),
-			// 					new Pipodforpic(target = Marker)});
+							 new Pipodforpic(target = Marker)});
 		}
 		else // ジャイロの場合
 		{
@@ -348,13 +352,18 @@ static void createScenario(Scenario &scenario, import_params &importParams, Loca
 			  		 	 	new TurnByLocalizer(goalX, goalY, TurningAmountForBeachFlag, localizer)});
 		}
 
-		/* 動作：直進 終了：指定時間走行*/
-		scenario.append({new DetectDistance(travelDistance),
+		/* 動作：直進 終了：指定時間(1[s])走行*/
+		scenario.append({new DetectSimpleCount(100),
 		 			 	new Turn(fixedTurningAmount = 0, speedMin = 1, speedMax = speed, Kp = amountOfAdjust)});
 
-		/* 実験用 動作：停止 終了：指定時間経過*/
-		scenario.append({new DetectTime(intervalForGettingFile),
-		  			 	new Stay()});
+		/* 動作：停止(可変時間) 終了：指定時間経過*/
+		// 走行+停止が1〜3秒になって欲しい
+		// 走行時間は1秒、停止時間は0〜2秒とする
+		// 入力数値(intervalForGettingFile)は1〜10
+		// 停止時間 = (intervalForGettingFile - 1) * 2/9
+		// 入力値 = {round [{(intervalForGettingFile - 1) * 2/9 + 1} * 100]} - 100
+		scenario.append({new DetectSimpleCount(intervalForStopping),
+		   			 	new Stay()});
 	}			 
 	
 	//停止
