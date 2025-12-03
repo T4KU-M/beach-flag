@@ -60,7 +60,7 @@ void Run::determineSpeed()
 
     this->cycle_count = this->cycle_count + 1; // カウントアップ
     double kp = int(this->kp * 5); // 元に戻すよーん
-    if (this->cycle_count % 20 == 0) // 200msごとに速度更新(わんちゃん周期違う説あるんですけども。あと吉田さん曰く、200msの変化はいい感じに人間が認識できるらしい)
+    if (this->cycle_count % 10 == 0) // 200msごとに速度更新(わんちゃん周期違う説あるんですけども。あと吉田さん曰く、200msの変化はいい感じに人間が認識できるらしい)
     {
         this->currentSpeed = this->currentSpeed + kp;
     }
