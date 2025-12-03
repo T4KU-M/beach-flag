@@ -4,7 +4,7 @@
 //#include "MotorPair.h"
 
 // コンストラクタ
-Turn::Turn(int fixedTurningAmount, int speedMin, int speedMax, double kp)
+Turn::Turn(int fixedTurningAmount, int speedMin, int speedMax, int kp)
 	: Run(speedMin, speedMax, kp), mFixedTurningAmount(fixedTurningAmount), mSpeedMin(speedMin), kp(kp), mReset(true)
 {
 	printf("Turn::Turn()\n");
