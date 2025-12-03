@@ -10,10 +10,10 @@ double Run::mEMVar;
 
 // コンストラクタ
 Run::Run(int speedMin, int speedMax)
-    : Act(), mSpeedMin(speedMin), mSpeedMax(speedMax), mBrightness(), cycle_count(0), currentSpeed(0), kp(1.0)
+    : Act(), mSpeedMin(speedMin), mSpeedMax(speedMax), mBrightness(), cycle_count(0), currentSpeed(0), kp(1)
 {
 }
-Run::Run(int speedMin, int speedMax, double kp)
+Run::Run(int speedMin, int speedMax, int kp)
     : Act(), mSpeedMin(speedMin), mSpeedMax(speedMax), mBrightness(), cycle_count(0), currentSpeed(0), kp(kp)
 {
 }
@@ -59,7 +59,7 @@ void Run::determineSpeed()
     // printf("Run::determineSpeed() brightness: %d, EMVar: %f, speed: %d\n", mBrightness, mEMVar, speed);
 
     this->cycle_count = this->cycle_count + 1; // カウントアップ
-    double kp = int(this->kp * 5); // 元に戻すよーん
+    int kp = this->kp;
     if (this->cycle_count % 20 == 0) // 200msごとに速度更新(わんちゃん周期違う説あるんですけども。あと吉田さん曰く、200msの変化はいい感じに人間が認識できるらしい)
     {
         this->currentSpeed = this->currentSpeed + kp;

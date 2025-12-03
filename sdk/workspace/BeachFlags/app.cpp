@@ -252,7 +252,7 @@ static void createScenario(Scenario &scenario, import_params &importParams, Loca
 	int deviceForAdjust 		= importParams.deviceForAdjust;				// フィードバック走行にカメラを使うか、ジャイロを使うか(0:カメラ/1:ジャイロ)
 	int speed	 				= importParams.speed;						// 走行スピード(1~100)
 	int intervalForGettingFile 	= importParams.intervalForGettingFile;		// 何秒に一度ジャイロorカメラからファイルを取得するか(1~10[s])
-	double amountOfAdjust 		= importParams.amountOfAdjust / 5; 			// フィードバック制御時の制御量(1~10) 0.2 <= kp <= 2.0 の間くらいで動かすとする
+	int amountOfAdjust   		= importParams.amountOfAdjust; 			    // フィードバック制御時の制御量(1~10) 0.2 <= kp <= 2.0 の間くらいで動かすとする
 
 	// 走行+停止が1〜3秒になって欲しい
 	// 走行時間は1秒、停止時間は0〜2秒とする
@@ -264,7 +264,7 @@ static void createScenario(Scenario &scenario, import_params &importParams, Loca
 	double intervalForStopping = std::round(((intervalForGettingFile - 1) * 2 / 9 + 1) * multipleConst) - intervalForRunning;
 
 	// log
-	printf("BF: createScenario() called with params - targetColor: %s, deviceForAdjust: %d, speed: %d, intervalForGettingFile: %d, amountOfAdjust: %f\n",
+	printf("BF: createScenario() called with params - targetColor: %s, deviceForAdjust: %d, speed: %d, intervalForGettingFile: %d, amountOfAdjust: %d\n",
 		   TARGET_BOTTLE_COLOR, deviceForAdjust, speed, intervalForGettingFile, amountOfAdjust);
 
 	// speedから秒速[mm]およびintervalForGettingFile[s]間走行する際の移動距離を算出

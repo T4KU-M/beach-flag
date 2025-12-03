@@ -9,7 +9,7 @@ class Turn : public Run
 {
 
 public:
-	Turn(int fixedTurningAmount, int speedMin, int speedMax, double kp);
+	Turn(int fixedTurningAmount, int speedMin, int speedMax, int kp);
 
 protected:
 	void determineSteering() override;
@@ -18,7 +18,7 @@ private:
 	const int mFixedTurningAmount;
 	int mSpeedMin;
 	bool mReset;
-	double kp;
+	int kp;
 };
 
 #endif

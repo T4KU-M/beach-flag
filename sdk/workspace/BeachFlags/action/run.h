@@ -9,7 +9,7 @@ class Run : public Act
 {
 public:
 	Run(int speedMin, int speedMax);
-	Run(int speedMin, int speedMax, double kp);
+	Run(int speedMin, int speedMax, int kp);
 
 protected:
 	void determineSpeedAndSteering() override;
@@ -25,7 +25,7 @@ private:
 	static double mEMAvg, mEMVar;
 	int cycle_count;
 	int currentSpeed;
-	double kp;
+	int kp;
 };
 
 #endif
