@@ -72,6 +72,7 @@ void Run::determineSpeed()
     {
         this->currentSpeed = this->mSpeedMin;
     }
+    printf("Run::determineSpeed() currentSpeed: %d, cycle_count: %d, kp: %d, speedmin: %d, speedmax: %d\n", this->currentSpeed, this->cycle_count, this->kp, this->mSpeedMin, this->mSpeedMax);
 
     setSpeed(this->currentSpeed);
 }

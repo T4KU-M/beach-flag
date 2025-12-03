@@ -53,7 +53,7 @@ struct import_params
 	int deviceForAdjust;			// フィードバック走行にカメラを使うか、ジャイロを使うか(0:カメラ/1:ジャイロ)
 	int speed;						// 走行スピード(1~100)
 	int intervalForGettingFile;		// 何秒に一度ジャイロorカメラからファイルを取得するか(1~10[s])
-	int amountOfAdjust;				// フィードバック制御時の制御量(1~10)
+	int amountOfAdjust;				// フィードバック制御時の制御量(1~100)
 };
 
 static void createScenario(Scenario &scenario, import_params &importParams, Localizer &localizer);
@@ -720,10 +720,15 @@ void getParamsFromFile(import_params &importParams)
 		}
 
 		// 最大値・最小値と比較し、仕様範囲外の場合デフォルト値を設定
-		importParams.deviceForAdjust 		= (0 <= inputs[1] && inputs[1] <= 1)? 	inputs[1] : defaultValues.deviceForAdjust;
-		importParams.speed 					= (1 <= inputs[2] && inputs[2] <= 100)? inputs[2] : defaultValues.speed;
-		importParams.intervalForGettingFile = (1 <= inputs[3] && inputs[3] <= 10)? 	inputs[3] : defaultValues.intervalForGettingFile;
-		importParams.amountOfAdjust 		= (1 <= inputs[4] && inputs[4] <= 10)? 	inputs[4] : defaultValues.amountOfAdjust;
+		importParams.deviceForAdjust 		= (0 <= inputs[0] && inputs[0] <= 1)? 	inputs[0] : defaultValues.deviceForAdjust;
+		importParams.speed 					= (1 <= inputs[1] && inputs[1] <= 100)? inputs[1] : defaultValues.speed;
+		importParams.intervalForGettingFile = (1 <= inputs[2] && inputs[2] <= 10)? 	inputs[2] : defaultValues.intervalForGettingFile;
+		importParams.amountOfAdjust 		= (1 <= inputs[3] && inputs[3] <= 100)? inputs[3] : defaultValues.amountOfAdjust;
+		printf("BF: deviceForAdjust = %d, speed = %d, intervalForGettingFile = %d, amountOfAdjust = %d\n",
+			   importParams.deviceForAdjust,
+			   importParams.speed,
+			   importParams.intervalForGettingFile,
+			   importParams.amountOfAdjust);
 	}
 }
 
