@@ -141,8 +141,8 @@ void scenarioTask(intptr_t unused)
 	/*キャリブレーションの値かdefine値を使うかの選択*/
 	gBlack = BLACK_R;
 	gWhite = WHITE_R;
-	BLUE.maxH = BLUE_H + 50;
-	BLUE.minH = BLUE_H - 50;
+	BLUE.maxH = BLUE_H + 20;
+	BLUE.minH = BLUE_H - 20;
 	BLUE.maxS = BLACK_R + 200;
 	BLUE.minS = BLACK_R + 30;
 	BLUE.maxV = 1023;
