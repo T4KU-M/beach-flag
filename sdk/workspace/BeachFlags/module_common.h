@@ -55,5 +55,6 @@ extern int gRedMinS, gRedMaxS;
 extern int gRedMinV, gRedMaxV;
 extern double currentX, currentY, currentTheta;
 extern double currentTargetTheta; // 可変量の旋回検知に対応するための変数
+extern int localizerCount; // Localizerの更新回数をカウントするグローバル変数
 
 #endif

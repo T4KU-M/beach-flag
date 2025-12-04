@@ -4,13 +4,15 @@
 #include "module_common.h"
 #include "act.h"
 #include "localizer.h"
+#include "calculateAngleForTurn.h"  
+#include "detectAngle.h"
 
 // 旋回クラス
 class TurnByLocalizer : public Act
 {
 
 public:
-	TurnByLocalizer(double targetX, double targetY, int TurningAmountForBeachFlag, Localizer &localizer);
+	TurnByLocalizer(double targetX, double targetY, int TurningAmountForBeachFlag, Localizer &localizer, CalculateAngleForTurn &calculateAngleForTurn);
 
 
 protected:
@@ -21,8 +23,10 @@ private:
     double mTargetY;
     int mFixedTurningAmount;
     Localizer& mLocalizer;
+    CalculateAngleForTurn& mCalculateAngleForTurn; 
     bool mReset;
     int sign;
+    int mCount;
 };
 
 #endif

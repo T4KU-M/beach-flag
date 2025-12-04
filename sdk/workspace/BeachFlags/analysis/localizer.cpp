@@ -1,4 +1,5 @@
 #include "localizer.h"
+#include <cmath>
 
 // sinc関数
 static double sinc(double x)
@@ -9,8 +10,9 @@ static double sinc(double x)
 }
 
 // コンストラクタ
+// 初期位置を-180度としたいため、以下の初期化を行う
 Localizer::Localizer()
-	: mX(), mY(), mTheta(), mTravelDistance(0), mLeftEncoder(), mRightEncoder(),
+	: mX(0), mY(0), mTheta(M_PI), mTravelDistance(0), mLeftEncoder(), mRightEncoder(),
 	  mReset(true)
 {
 }
@@ -32,7 +34,7 @@ void Localizer::update()
 	mRightEncoder[prev] = mRightEncoder[curr];
 	mRightEncoder[curr] = pup_motor_get_count(gRobot.rightMotor());
 
-	const double WheelDiameter = 56, WheelTrackWidth = 140;
+	const double WheelDiameter = 55, WheelTrackWidth = 110;
 	double L, R, dX, dY, dTheta;
 
 	// 自己位置を計算
@@ -44,6 +46,14 @@ void Localizer::update()
 
 	mX += dX; mY += dY; mTheta += dTheta;
 	mTravelDistance += std::sqrt(std::pow(dX, 2) + std::pow(dY, 2));
+
+	// ビーチフラッグ用
+	// 最初に超信地旋回した直後のみ、x, y座標の符号を反転させる
+	if (localizerCount == 1) {
+		mX = -mX;
+		mY = -mY;
+	}
+	localizerCount++;
 }
 
 // 自己位置と進行方向を取得する

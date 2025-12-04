@@ -21,7 +21,8 @@ void Pipod::determineSpeedAndSteering()
 		int u = 80;
 		int s = 1;
 		s = (mLineEdge == Left)? 1 : -1; 
-		setSpeed(u);		// 速度をゼロにする
+		// setSpeed(u);		// 速度をゼロにする
+		setSpeed(0);
 		setSteering((u + 10)*s);		// 旋回量をゼロにする
 
 }

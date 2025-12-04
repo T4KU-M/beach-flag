@@ -15,6 +15,7 @@ int gRedMinS, gRedMaxS;
 int gRedMinV, gRedMaxV;
 double currentX, currentY, currentTheta;
 double currentTargetTheta; // 可変量の旋回検知に対応するための変数
+int localizerCount;
 
 
 double gateangle ;

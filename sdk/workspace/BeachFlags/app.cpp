@@ -46,6 +46,7 @@
 #include "writefile.h"
 #include "detectRead.h"
 #include "detectSimpleCount.h"
+#include "calculateAngleForTurn.h"
 
 // createScenario()に渡すパラメータ群を保持する構造体
 struct import_params
@@ -56,7 +57,7 @@ struct import_params
 	int amountOfAdjust;				// フィードバック制御時の制御量(1~100)
 };
 
-static void createScenario(Scenario &scenario, import_params &importParams, Localizer &localizer);
+static void createScenario(Scenario &scenario, import_params &importParams, Localizer &localizer, CalculateAngleForTurn &calculateAngleForTurn);
 // static void createScenario(Scenario &scenario)
 // static void createScenario_slalom(Scenario &scenario);
 // static void createScenario_garage(Scenario &scenario);
@@ -188,12 +189,13 @@ void scenarioTask(intptr_t unused)
 		// シナリオ作成用変数
 		Scenario *pScenario = new Scenario();
 		Localizer *pLocalizer = new Localizer();
+		CalculateAngleForTurn *pCalculateAngleForTurn = new CalculateAngleForTurn();
 		currentX = -1;
 		currentY = -1;
 		currentTheta = -1;
 
 		// シナリオを作成する
-		createScenario(*pScenario, importParams, *pLocalizer);
+		createScenario(*pScenario, importParams, *pLocalizer, *pCalculateAngleForTurn);
 
 		// 終了フラグ
 		bool complete = false;
@@ -214,6 +216,10 @@ void scenarioTask(intptr_t unused)
 				break;
 			}
 
+			// 自己位置推定と角度取得のため、update()を呼び出す
+			pLocalizer->update();
+			pCalculateAngleForTurn->update();
+
 			// スタートからゴールまでのシナリオを実行する
 			complete = pScenario->excute();
 			slp_tsk();
@@ -221,6 +227,7 @@ void scenarioTask(intptr_t unused)
 
 		delete pScenario;
 		delete pLocalizer;
+		delete pCalculateAngleForTurn;
 		delete detectColor;
 		delete detectForceSensor;
 
@@ -234,7 +241,7 @@ void scenarioTask(intptr_t unused)
 }
 
 // シナリオを作成する.
-static void createScenario(Scenario &scenario, import_params &importParams, Localizer &localizer)
+static void createScenario(Scenario &scenario, import_params &importParams, Localizer &localizer, CalculateAngleForTurn &calculateAngleForTurn)
 {
 	// const int darkThreshold = gBlack + 20;
 	// const int grayThreshold = (gWhite + gBlack) / 2 - 10;
@@ -252,7 +259,7 @@ static void createScenario(Scenario &scenario, import_params &importParams, Loca
 	int deviceForAdjust 		= importParams.deviceForAdjust;				// フィードバック走行にカメラを使うか、ジャイロを使うか(0:カメラ/1:ジャイロ)
 	int speed	 				= importParams.speed;						// 走行スピード(1~100)
 	int intervalForGettingFile 	= importParams.intervalForGettingFile;		// 何秒に一度ジャイロorカメラからファイルを取得するか(1~10[s])
-	int amountOfAdjust   		= importParams.amountOfAdjust; 			    // フィードバック制御時の制御量(1~10) 0.2 <= kp <= 2.0 の間くらいで動かすとする
+	int amountOfAdjust   		= importParams.amountOfAdjust; 			    // 走行時の加速度(1~100)
 
 	// 走行+停止が1〜3秒になって欲しい
 	// 走行時間は1秒、停止時間は0〜2秒とする
@@ -261,6 +268,11 @@ static void createScenario(Scenario &scenario, import_params &importParams, Loca
 	// 入力値 = {round [{(intervalForGettingFile - 1) * 2/9 + 1} * 100]} - 100
 	int intervalForRunning = 100; // 単位：[10ms]
 	int multipleConst = 100;
+
+	// GUIでの設定値は値が大きいほど停止時間が長くなるようにしているため、ここで変換する
+	intervalForGettingFile = 11 - intervalForGettingFile;
+
+	// detectSimpleCount()への入力値を計算
 	double intervalForStopping = std::round(((intervalForGettingFile - 1) * 2 / 9 + 1) * multipleConst) - intervalForRunning;
 
 	// log
@@ -278,6 +290,9 @@ static void createScenario(Scenario &scenario, import_params &importParams, Loca
 	// ビーチフラッグ 目標地点の座標
 	double goalX = 4000.0; // スタート時、背を向けているところが基準になるので進行方向はマイナスの値
 	double goalY = 0.0; 
+
+	// ビーチフラッグ Localizerの更新回数
+	localizerCount = 0;
 
 	// PID の初期値（デフォルト値）20250904////////////////////////////////////////////////////////////////////////////////////
 	double kp_test = KP1;
@@ -305,21 +320,23 @@ static void createScenario(Scenario &scenario, import_params &importParams, Loca
 #endif /*SETPIDFROMFILE*/
 	///////////////////////ここが本番のシナリオの中身////////////////////////////////////////////////////////
 
-	/* 動作：ぴぽっど 終了：角度 */
-	scenario.append({new DetectAngle(170),
-	  				 new Pipod(Left)});
-	
-	/* 慣性で動くのを止めたい 動作：停止 終了：指定時間経過*/
-	scenario.append({new DetectTime(intervalForGettingFile),
-	 	 			new Stay()});
-	
 	if(deviceForAdjust == 1) // ジャイロ使用の場合
 	{
 		/* 動作：自己位置を(0, 0)にリセット 終了：自己位置更新完了 */
 		scenario.append({new DetectCount(),
-		  			 	 new TurnByLocalizer(0, 0, 0, localizer)});
+		  			 	 new TurnByLocalizer(0, 0, 0, localizer, calculateAngleForTurn)});
 	}
-	else{
+
+	/* 動作：ぴぽっど 終了：角度 */
+	scenario.append({new DetectAngle(175),
+	  				 new Pipod(Left)});
+	
+	/* 慣性で動くのを止めたい 動作：停止 終了：指定時間経過*/
+	scenario.append({new DetectTime(intervalForGettingFile),
+	  	 			new Stay()});
+	
+	if(deviceForAdjust == 0) // カメラ使用の場合
+	{
 		/* カメラ起動 */
 		scenario.append({new DetectSimpleCount(5),
 		  			 	 new Writefile()});
@@ -349,12 +366,12 @@ static void createScenario(Scenario &scenario, import_params &importParams, Loca
 			/* 動作：ジャイロで自己位置推定 → 目標ターン角度を計算してcurrentTargetThetaに格納 → 一定のPWMで旋回 
 			   終了：currentTargetThetaに格納されている角度分のターンが完了 */
 			scenario.append({new DetectAngleForCurrentTargetValue(),
-			  		 	 	new TurnByLocalizer(goalX, goalY, TurningAmountForBeachFlag, localizer)});
+			  		 	 	new TurnByLocalizer(goalX, goalY, TurningAmountForBeachFlag, localizer, calculateAngleForTurn)});
 		}
 
 		/* 動作：直進 終了：指定時間(1[s])走行*/
 		scenario.append({new DetectSimpleCount(100),
-		 			 	new Turn(fixedTurningAmount = 0, speedMin = 1, speedMax = speed, Kp = amountOfAdjust)});
+		  			 	new Turn(fixedTurningAmount = 0, speedMin = 1, speedMax = speed, Kp = amountOfAdjust)});
 
 		/* 動作：停止(可変時間) 終了：指定時間経過*/
 		// 走行+停止が1〜3秒になって欲しい

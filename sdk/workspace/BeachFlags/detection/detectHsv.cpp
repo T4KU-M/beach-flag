@@ -19,7 +19,7 @@ bool DetectHsv::detect()
 {
 	int h, s, v;
 	mHsvMeasure.getHSV(h, s, v);
-	printf("hsv %3d %3d %3d : min %3d %3d %3d : max %3d %3d %3d\n", h, s, v,mMinH, mMinS, mMinV,mMaxH, mMaxS, mMaxV);
+	// printf("hsv %3d %3d %3d : min %3d %3d %3d : max %3d %3d %3d\n", h, s, v,mMinH, mMinS, mMinV,mMaxH, mMaxS, mMaxV);
 	//printf("DetectHsv: h=%d, s=%d, v=%d\n", mMinH, mMinS, mMinV);
 	//printf("DetectHsv: h=%d, s=%d, v=%d\n", h, s, v);
 	if ((h > mMinH) && (h < mMaxH) &&
